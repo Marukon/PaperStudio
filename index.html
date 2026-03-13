@@ -805,16 +805,15 @@
                 </label>
               </div>
               <div id="customSizeInputs" class="grid grid-cols-2 gap-2 hidden">
-                <div>
-                  <label class="compact-label">宽(mm)</label>
-                  <input type="number" id="customW" value="210" class="w-full compact-input border rounded" />
-                </div>
-                <div>
-                  <label class="compact-label">高(mm)</label>
-                  <input type="number" id="customH" value="297" class="w-full compact-input border rounded" />
-                </div>
-                <button onclick="App.paper.updateSize()" class="col-span-2 bg-gray-100 hover:bg-gray-200 py-1 rounded">应用尺寸</button>
+              <div>
+                <label class="compact-label">宽(mm)</label>
+                <input type="number" id="customW" value="210" class="w-full compact-input border rounded" oninput="App.paper.updateSize()" />
               </div>
+              <div>
+                <label class="compact-label">高(mm)</label>
+                <input type="number" id="customH" value="297" class="w-full compact-input border rounded" oninput="App.paper.updateSize()" />
+              </div>
+            </div>
               <div class="grid grid-cols-2 gap-2">
                 <div>
                   <label class="compact-label">上边距</label>
@@ -4832,6 +4831,15 @@
             const fitLabel = el("fitLabelSize") && el("fitLabelSize").checked;
             const isDesign = type === "label" && App.state.label.mode === "design";
             App.state.paperType = type;
+
+             const customSizeInputs = el("customSizeInputs");
+              if (customSizeInputs) {
+                if (sizeKey === "CUSTOM") {
+                  customSizeInputs.classList.remove("hidden");
+                } else {
+                  customSizeInputs.classList.add("hidden");
+                }
+              }
             if (el("paperOptions")) {
               ["paperOptions", "showMarks", "labelLayout"].forEach((k) => {
                 const element = el(k);
