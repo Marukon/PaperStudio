@@ -11,7 +11,6 @@
     <script src="./static/fabric.min.js"></script>
     <script src="./static/jspdf.umd.min.js"></script>
     <script src="./static/svg2pdf.umd.min.js"></script>
-    <script src="./static/opentype.min.js"></script>
     <script src="./static/hotkeys-js.min.js"></script>
     <script src="./static/toastify-js.js"></script>
     <script src="./static/coloris.min.js"></script>
@@ -331,6 +330,166 @@
         border-color: #e11d48 !important;
       }
 
+      /* ===== 字体搜索下拉组件样式 ===== */
+      .font-select-wrapper {
+        position: relative;
+        width: 100%;
+      }
+
+      .font-select-trigger {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        height: 28px;
+        padding: 0 6px;
+        font-size: 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        background: #f9fafb;
+        color: #374151;
+        cursor: pointer;
+        user-select: none;
+        transition: border-color 0.15s;
+        box-sizing: border-box;
+        gap: 4px;
+      }
+
+      .font-select-trigger:hover {
+        background: #f3f4f6;
+        border-color: #9ca3af;
+      }
+
+      .font-select-trigger.open {
+        border-color: #e11d48;
+        background: #fff;
+      }
+
+      .font-select-trigger-label {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .font-select-trigger-icon {
+        flex-shrink: 0;
+        font-size: 10px;
+        color: #9ca3af;
+        transition: transform 0.15s;
+      }
+
+      .font-select-trigger.open .font-select-trigger-icon {
+        transform: rotate(180deg);
+      }
+
+      .font-select-dropdown {
+        display: none;
+        position: fixed;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15), 0 4px 8px -2px rgba(0,0,0,0.08);
+        z-index: 9999;
+        width: 200px;
+        overflow: hidden;
+        flex-direction: column;
+      }
+
+      .font-select-dropdown.open {
+        display: flex;
+      }
+
+      .font-select-search-box {
+        padding: 8px 8px 4px;
+        border-bottom: 1px solid #f3f4f6;
+        flex-shrink: 0;
+      }
+
+      .font-select-search-input {
+        width: 100%;
+        height: 26px;
+        padding: 0 8px;
+        font-size: 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        background: #f9fafb;
+        color: #374151;
+        box-sizing: border-box;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+
+      .font-select-search-input:focus {
+        border-color: #e11d48 !important;
+      }
+
+      .font-select-list {
+        overflow-y: auto;
+        max-height: 220px;
+        padding: 4px;
+      }
+
+      .font-select-list::-webkit-scrollbar {
+        width: 5px;
+      }
+      .font-select-list::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .font-select-list::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+      }
+
+      .font-select-option {
+        padding: 5px 8px;
+        font-size: 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: #374151;
+        transition: background 0.1s;
+      }
+
+      .font-select-option:hover {
+        background: #f1f5f9;
+      }
+
+      .font-select-option.selected {
+        background: #fee2e2;
+        color: #be123c;
+        font-weight: 600;
+      }
+
+      .font-select-option.separator {
+        font-size: 10px;
+        color: #9ca3af;
+        padding: 6px 8px 2px;
+        cursor: default;
+        font-weight: bold;
+        letter-spacing: 0.03em;
+        pointer-events: none;
+      }
+
+      .font-select-option.separator:hover {
+        background: transparent;
+      }
+
+      .font-select-empty {
+        padding: 12px 8px;
+        font-size: 12px;
+        color: #9ca3af;
+        text-align: center;
+      }
+
+      /* 紧凑模式（用于浮动工具栏，宽度受限） */
+      .font-select-wrapper.compact .font-select-trigger {
+        height: 28px;
+        font-size: 11px;
+      }
+
       @font-face {
         font-family: "SourceHanSerifCN-Bold";
         src: url("./static/SourceHanSerifCN-Bold.ttf") format("truetype");
@@ -540,14 +699,14 @@
             <div class="border-r border-gray-200 pr-2">
               <select
                 id="floatFontFamily"
-                onclick="App.loadLocalFonts()"
-                class="h-7 bg-gray-50 border border-gray-300 rounded text-xs text-slate-700 focus:outline-none focus:border-red-500 w-24 hover:bg-gray-100">
+                class="hidden">
                 <option value="SourceHanSerifCN-Bold">思源宋体</option>
                 <option value="SimSun">宋体</option>
                 <option value="KaiTi">楷体</option>
                 <option value="SimHei">黑体</option>
                 <option value="Arial">Arial</option>
               </select>
+              <div class="font-select-wrapper compact" id="floatFontFamilyPicker" style="width:90px"></div>
             </div>
 
             <!-- 字号与加粗 -->
@@ -1573,8 +1732,9 @@
                 <div class="flex gap-1 items-end">
                   <div class="flex-1">
                     <label class="compact-label">字体</label>
-                    <select id="propFont" onchange="App.ui.setProp('fontFamily', this.value)" onclick="App.loadLocalFonts()" class="w-full compact-input border rounded bg-white">
-                      <option value="SourceHanSerifCN-Bold" style="font-family: &quot;SourceHanSerifCN-Bold&quot;">思源宋体</option>
+                    <!-- 隐藏的 select 用于兼容原有逻辑 -->
+                    <select id="propFont" class="hidden">
+                      <option value="SourceHanSerifCN-Bold">思源宋体</option>
                       <option value="SimSun">宋体</option>
                       <option value="KaiTi">楷体</option>
                       <option value="SimHei">黑体</option>
@@ -1582,6 +1742,7 @@
                       <option value="Arial">Arial</option>
                       <option value="'Times New Roman'">Times New Roman</option>
                     </select>
+                    <div class="font-select-wrapper" id="propFontPicker"></div>
                   </div>
                   <div class="w-16">
                     <label class="compact-label">字号</label>
@@ -2055,13 +2216,11 @@
         </div>
       </aside>
     </div>
-    <!-- Loading Overlay -->
     <div id="loadingOverlay" class="hidden fixed inset-0 z-[60] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center">
       <div class="animate-spin rounded-full h-12 w-12 border-4 border-red-600 border-t-transparent"></div>
       <p class="mt-4 text-slate-600 font-medium animate-pulse">正在加载模板...</p>
     </div>
     <script>
-      // --- 1. 配置与常量定义 ---
       const CONFIG = {
         DPI: 96,
         MM_TO_PX: 3.7795,
@@ -2143,7 +2302,6 @@
         "imgDirId",
         "imgDirName",
       ];
-
       const DATE_FMT_OPTS = [
         {
           l: "2024-01-30",
@@ -2225,7 +2383,6 @@
           v: "DD日",
         },
       ];
-
       const TIME_FMT_OPTS = [
         {
           l: "14:30:59",
@@ -2311,18 +2468,14 @@
           v: "ss秒",
         },
       ];
-
-      // --- 通用工具类 ---
       const Utils = {
         mm2px: (mm) => mm * CONFIG.MM_TO_PX,
         px2mm: (px) => px / CONFIG.MM_TO_PX,
         pt2px: (pt) => Math.round(pt * CONFIG.PT_TO_PX),
         px2pt: (px) => Math.round(px / CONFIG.PT_TO_PX),
 
-        // 生成唯一ID
         generateUniqueId: () => `handle_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
 
-        // 显示 Toast 提示
         toast: (text, type = "info") => {
           const bg = type === "error" ? "linear-gradient(to right, #ff5f6d, #ffc371)" : type === "success" ? "linear-gradient(to right, #00b09b, #96c93d)" : "#333";
           Toastify({
@@ -2339,7 +2492,6 @@
           }).showToast();
         },
 
-        // 节流函数
         throttle: (func, limit) => {
           let inThrottle;
           return function () {
@@ -2355,7 +2507,6 @@
 
         formatDate: function (date, unusedFormat, config) {
           if (!config) return date.toLocaleString();
-
           let targetDate = new Date(date);
           if (config.offsetDays) {
             targetDate.setDate(targetDate.getDate() + (parseInt(config.offsetDays) || 0));
@@ -2368,9 +2519,7 @@
           if (config.showDate) formatString += config.dateFormat || "YYYY-MM-DD";
           if (config.showDate && config.showTime) formatString += " ";
           if (config.showTime) formatString += config.timeFormat || "HH:mm:ss";
-
           if (!formatString) return "";
-
           const parts = {
             YYYY: targetDate.getFullYear(),
             MM: String(targetDate.getMonth() + 1).padStart(2, "0"),
@@ -2381,13 +2530,10 @@
             h: String(targetDate.getHours() % 12 || 12),
             A: targetDate.getHours() >= 12 ? "PM" : "AM",
           };
-
           let result = formatString;
-
           Object.keys(parts).forEach((key) => {
             result = result.replace(new RegExp(key, "g"), parts[key]);
           });
-
           return result;
         },
 
@@ -2397,9 +2543,7 @@
             tr = Math.min(r.tr, maxR),
             br = Math.min(r.br, maxR),
             bl = Math.min(r.bl, maxR);
-
           let path = `M ${tl} 0 L ${w - tr} 0 `;
-
           if (style === "round") {
             path += tr > 0 ? `A ${tr} ${tr} 0 0 1 ${w} ${tr} ` : `L ${w} 0 `;
             path += `L ${w} ${h - br} `;
@@ -2409,13 +2553,11 @@
             path += `L 0 ${tl} `;
             path += tl > 0 ? `A ${tl} ${tl} 0 0 1 ${tl} 0 ` : `L 0 0 `;
           } else {
-            // Bevel style
             path += `L ${w} ${tr} L ${w} ${h - br} L ${w - br} ${h} L ${bl} ${h} L 0 ${h - bl} L 0 ${tl} L ${tl} 0 `;
           }
           return path + "Z";
         },
 
-        // Liang-Barsky 线段裁剪算法
         clipLine: (x1, y1, x2, y2, left, top, right, bottom) => {
           let t0 = 0.0,
             t1 = 1.0;
@@ -2423,7 +2565,6 @@
           const dy = y2 - y1;
           const p = [-dx, dx, -dy, dy];
           const q = [x1 - left, right - x1, y1 - top, bottom - y1];
-
           for (let i = 0; i < 4; i++) {
             if (p[i] === 0) {
               if (q[i] < 0) return null;
@@ -2440,7 +2581,6 @@
           }
 
           if (t0 > t1) return null;
-
           return {
             x1: x1 + t0 * dx,
             y1: y1 + t0 * dy,
@@ -2449,8 +2589,6 @@
           };
         },
       };
-
-      // --- 2. App 主逻辑 ---
       const App = {
         canvas: null,
         state: {
@@ -2466,7 +2604,6 @@
           selectionQueue: [],
           localFontsLoaded: false,
           hasUnsavedChanges: false,
-          availabelFonts: [],
           editingBackground: false,
           printCurrentOnly: false,
           isReplacingObject: false,
@@ -2492,7 +2629,6 @@
           },
         },
 
-        // 初始化应用
         init: function () {
           Coloris({
             el: "#floatBgInput",
@@ -2503,7 +2639,6 @@
             wrap: false,
             swatches: ["#ffffff", "#666666", "#e11d48", "#2563eb", "#16a34a", "transparent"],
           });
-
           this.canvas = new fabric.Canvas("paperCanvas", {
             backgroundColor: "#fff",
             preserveObjectStacking: true,
@@ -2514,8 +2649,6 @@
             defaultCursor: "default",
             hoverCursor: "move",
           });
-
-          // 全局对象默认样式
           fabric.Object.prototype.set({
             borderColor: "#3b82f6",
             borderScaleFactor: 1.5,
@@ -2530,11 +2663,8 @@
             objectCaching: false,
             noScaleCache: false,
           });
-
-          // 自定义旋转控制手柄
           const rotateImg = new Image();
           rotateImg.src = "./static/rotate.png";
-
           function renderRotationControl(ctx, left, top, styleOverride, fabricObject) {
             if (fabricObject.__corner !== this.name) return;
             const size = this.cornerSize;
@@ -2549,7 +2679,6 @@
             };
             const adjustment = cornerAngleAdjustment[this.name] || 0;
             ctx.rotate(fabric.util.degreesToRadians(adjustment));
-
             if (rotateImg.complete) {
               ctx.drawImage(rotateImg, -size / 2, -size / 2, size, size);
             } else {
@@ -2585,13 +2714,10 @@
             controlsConfig.mtr_br = createRotationControl(0.5, 0.5, "mtr_br");
             delete controlsConfig.mtr;
           };
-
           applyCustomRotationControls(fabric.Object.prototype.controls);
           applyCustomRotationControls(fabric.Textbox.prototype.controls);
-
           const baseRenderTextbox = fabric.Textbox.prototype._renderTextLine;
           const baseRenderIText = fabric.IText.prototype._renderTextLine;
-
           function renderJustifiedTextLine(baseMethod, method, ctx, line, left, top, lineIndex) {
             const isLastLine = lineIndex === this._textLines.length - 1;
             if (this.textAlign !== "justify" || isLastLine || this.isVertical) {
@@ -2635,7 +2761,6 @@
           fabric.IText.prototype._renderTextLine = function (method, ctx, line, left, top, lineIndex) {
             renderJustifiedTextLine.call(this, baseRenderIText, method, ctx, line, left, top, lineIndex);
           };
-
           this.canvas.on("mouse:move", (opt) => {
             const target = this.canvas.getActiveObject();
             if (target && target.__corner !== target._lastHoveredCorner) {
@@ -2663,7 +2788,6 @@
             }
             setTimeout(() => App.dataSource && App.dataSource.refreshBindingState(), 100);
           });
-
           this.paper.init();
           this.ruler.init();
           this.history.init();
@@ -2676,7 +2800,138 @@
           if ("queryLocalFonts" in window) setTimeout(() => this.loadLocalFonts(), 1000);
         },
 
-        // --- 历史记录管理 ---
+        fontManager: {
+          fonts: new Map(),
+          availableFonts:[],
+
+          queryLocalFonts: async function () {
+            if (!("queryLocalFonts" in window)) return[];
+            this.availableFonts = await window.queryLocalFonts();
+            return this.availableFonts;
+          },
+
+          getFontBlob: async function (family) {
+            if (this.fonts.has(family)) return this.fonts.get(family);
+            if (family === "SourceHanSerifCN-Bold") {
+              try {
+                const res = await fetch("./static/SourceHanSerifCN-Bold.ttf");
+                const blob = await res.blob();
+                this.fonts.set(family, blob);
+                return blob;
+              } catch (e) {
+                console.warn("无法加载默认字体", e);
+              }
+            }
+
+            if (this.availableFonts.length === 0) await this.queryLocalFonts();
+            // 3. 核心修复：优先进行【精确匹配】(匹配具体的字重/字形)
+            let fontMetadata = this.availableFonts.find((f) =>
+              f.postscriptName === family || f.fullName === family
+            );
+            if (!fontMetadata) {
+              const map = {
+                SimSun:["simsun", "宋体"],
+                SimHei: ["simhei", "黑体"],
+                KaiTi:["kaiti", "楷体", "kaiti_gb2312"],
+                FangSong:["fangsong", "仿宋"],
+                "Microsoft YaHei": ["yahei", "微软雅黑"],
+                Arial: ["arial"],
+                "Times New Roman": ["times new roman", "times"]
+              };
+              const aliases = map[family] || [family.toLowerCase()];
+              fontMetadata = this.availableFonts.find((f) =>
+                aliases.some((alias) => f.family.toLowerCase().includes(alias) || f.fullName.toLowerCase().includes(alias))
+              );
+            }
+
+            if (!fontMetadata) {
+              fontMetadata = this.availableFonts.find((f) => f.fullName.includes("YaHei") || f.fullName.includes("SimSun"));
+              if (!fontMetadata) return null;
+            }
+
+            const rawBlob = await fontMetadata.blob();
+            const arrayBuffer = await rawBlob.arrayBuffer();
+            let finalBlob = rawBlob;
+            const view = new DataView(arrayBuffer);
+            const magic = String.fromCharCode(view.getUint8(0), view.getUint8(1), view.getUint8(2), view.getUint8(3));
+            if (magic === "ttcf") {
+              try {
+                const ttfBuffer = this._extractTTCtoTTF(arrayBuffer);
+                finalBlob = new Blob([ttfBuffer], { type: "font/ttf" });
+              } catch (err) {
+                console.error("TTC 解析失败", err);
+              }
+            }
+
+            this.fonts.set(family, finalBlob); 
+            return finalBlob;
+          },
+
+          applyToJsPDF: async function (doc, requiredFamilies) {
+            for (let family of requiredFamilies) {
+              const cleanFamily = family.replace(/['"]/g, "");
+              const blob = await this.getFontBlob(cleanFamily);
+              if (blob) {
+                const base64 = await this._blobToBase64(blob);
+                const filename = `${cleanFamily}.ttf`;
+                doc.addFileToVFS(filename, base64);
+                doc.addFont(filename, cleanFamily, "normal");
+                doc.addFont(filename, cleanFamily, "bold");
+                doc.addFont(filename, cleanFamily, "italic");
+                doc.addFont(filename, cleanFamily, "bolditalic");
+              }
+            }
+          },
+
+          clearCache: function () {
+            this.fonts.clear();
+          },
+
+          _extractTTCtoTTF: function (arrayBuffer) {
+            const view = new DataView(arrayBuffer);
+            const firstFontOffset = view.getUint32(12, false);
+            const numTables = view.getUint16(firstFontOffset + 4, false);
+            const newHeaderSize = 12 + numTables * 16;
+            let tables =[];
+            let currentNewOffset = newHeaderSize;
+            for (let i = 0; i < numTables; i++) {
+              const recordOffset = firstFontOffset + 12 + i * 16;
+              const tag = view.getUint32(recordOffset, false);
+              const checkSum = view.getUint32(recordOffset + 4, false);
+              const originalOffset = view.getUint32(recordOffset + 8, false);
+              const length = view.getUint32(recordOffset + 12, false);
+              const padding = (4 - (length % 4)) % 4;
+              tables.push({ tag, checkSum, originalOffset, length, newOffset: currentNewOffset });
+              currentNewOffset += length + padding;
+            }
+
+            const ttfBuffer = new ArrayBuffer(currentNewOffset);
+            const ttfView = new DataView(ttfBuffer);
+            const ttfUint8 = new Uint8Array(ttfBuffer);
+            const origUint8 = new Uint8Array(arrayBuffer);
+            for (let i = 0; i < 12; i++) ttfUint8[i] = origUint8[firstFontOffset + i];
+            for (let i = 0; i < numTables; i++) {
+              const table = tables[i];
+              const recordOffset = 12 + i * 16;
+              ttfView.setUint32(recordOffset, table.tag, false);
+              ttfView.setUint32(recordOffset + 4, table.checkSum, false);
+              ttfView.setUint32(recordOffset + 8, table.newOffset, false);
+              ttfView.setUint32(recordOffset + 12, table.length, false);
+              for (let j = 0; j < table.length; j++) ttfUint8[table.newOffset + j] = origUint8[table.originalOffset + j];
+            }
+            return ttfBuffer;
+          },
+
+          _blobToBase64: function (blob) {
+            return new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result.split(",")[1]);
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+          }
+        },
+
         history: {
           stack: [],
           index: -1,
@@ -2760,13 +3015,11 @@
           },
         },
 
-        //数据源模块
         dataSource: {
           getCanvasState: function () {
             const objs = App.canvas.getObjects();
             let hasBinding = false;
             let maxSerialCount = 0;
-
             objs.forEach((o) => {
               if (o.dataBinding && o.dataBinding.type === "variable" && o.dataBinding.field) {
                 hasBinding = true;
@@ -2784,7 +3037,6 @@
                 maxSerialCount = Math.max(maxSerialCount, o.serialConfig.generateCount || 1);
               }
             });
-
             return {
               hasBinding,
               maxSerialCount,
@@ -2804,13 +3056,10 @@
                 ],
                 multiple: false,
               });
-
               let finalHandleId = null;
               let isExisting = false;
-
               try {
                 const entries = await idbKeyval.entries();
-
                 for (const [key, storedHandle] of entries) {
                   if (storedHandle && storedHandle.kind === "file" && typeof storedHandle.isSameEntry === "function") {
                     const isSame = await handle.isSameEntry(storedHandle);
@@ -2844,20 +3093,17 @@
               const nameLabel = document.getElementById("permFileName");
               const grantBtn = document.getElementById("permGrantBtn");
               const cancelBtn = document.getElementById("permCancelBtn");
-
               if (!modal) {
                 return resolve(false);
               }
 
               nameLabel.innerText = handle.name;
               modal.classList.remove("hidden");
-
               const cleanup = () => {
                 modal.classList.add("hidden");
                 grantBtn.onclick = null;
                 cancelBtn.onclick = null;
               };
-
               grantBtn.onclick = async () => {
                 try {
                   const status = await handle.requestPermission({
@@ -2871,7 +3117,6 @@
                   resolve(false);
                 }
               };
-
               cancelBtn.onclick = () => {
                 cleanup();
                 Utils.toast("已取消加载数据源", "info");
@@ -2884,7 +3129,6 @@
             const s = App.state.dataSource;
             let handle = s.fileHandle;
             const handleId = s.fileHandleId;
-
             if (!handle && handleId) {
               try {
                 handle = await idbKeyval.get(handleId);
@@ -2927,7 +3171,6 @@
 
               App.state.dataSource.lastModified = file.lastModified;
               const arrayBuffer = await file.arrayBuffer();
-
               const workbook = XLSX.read(arrayBuffer, {
                 type: "array",
                 cellNF: true,
@@ -2936,13 +3179,10 @@
                 cellDates: false,
                 cellFormula: false,
               });
-
               const validSheetNames = workbook.SheetNames.filter((name) => {
                 const ws = workbook.Sheets[name];
-
                 return ws["!ref"];
               });
-
               if (validSheetNames.length === 0) {
                 Utils.toast("导入失败：表格内容为空", "error");
                 this.close();
@@ -2962,7 +3202,6 @@
               }
 
               this.processCurrentSheet(true);
-
               const act = App.canvas.getActiveObject();
               if (act && act.dataBinding && act.dataBinding.type === "variable" && s.headers.length > 0) {
                 act.dataBinding.sheet = s.currentSheet;
@@ -2986,17 +3225,13 @@
             const s = App.state.dataSource;
             if (!s.isActive || !s.workbook) return;
             const worksheet = s.workbook.Sheets[s.currentSheet];
-
             const jsonHeader = XLSX.utils.sheet_to_json(worksheet, {
               header: 1,
             });
-
             s.data = [];
             s.headers = [];
-
             if (jsonHeader.length > 0) {
               s.headers = jsonHeader[0].map((h) => String(h || "").trim());
-
               s.data = XLSX.utils.sheet_to_json(worksheet, {
                 raw: false,
                 dateNF: "yyyy-mm-dd",
@@ -3007,9 +3242,7 @@
             let idx = parseInt(App.state.currentDataIndex) || 0;
             if (idx >= s.data.length) idx = 0;
             if (idx < 0) idx = 0;
-
             App.state.currentDataIndex = idx;
-
             if (!skipRender) {
               this.renderPage(idx);
               this.updateUI();
@@ -3021,7 +3254,6 @@
           changeSheet: function (sheetName) {
             const s = App.state.dataSource;
             s.currentSheet = sheetName;
-
             if (s.isActive && s.workbook) {
               const worksheet = s.workbook.Sheets[sheetName];
               const jsonHeader = XLSX.utils.sheet_to_json(worksheet, {
@@ -3031,7 +3263,6 @@
               s.headers = [];
               if (jsonHeader.length > 0) {
                 s.headers = jsonHeader[0].map((h) => String(h || "").trim());
-
                 s.data = XLSX.utils.sheet_to_json(worksheet, {
                   raw: false,
                   dateNF: "yyyy-mm-dd",
@@ -3047,9 +3278,7 @@
           calculateTotalPages: function () {
             const s = App.state.dataSource;
             const cfg = App.paper.getSettings();
-
             const canvasState = this.getCanvasState();
-
             if (App.state.paperType === "label" && App.state.label.mode === "preview") {
               const baseCount = s.isActive && s.data.length > 0 ? s.data.length : 1;
               const totalItems = baseCount * cfg.labelQuantity;
@@ -3060,7 +3289,6 @@
             if (s.isActive && canvasState.hasBinding && s.workbook) {
               const objs = App.canvas.getObjects();
               let boundSheetName = null;
-
               const findBoundSheet = (target) => {
                 if (target.dataBinding && target.dataBinding.type === "variable" && target.dataBinding.sheet) {
                   return target.dataBinding.sheet;
@@ -3074,7 +3302,6 @@
                 }
                 return null;
               };
-
               for (const o of objs) {
                 boundSheetName = findBoundSheet(o);
                 if (boundSheetName) break;
@@ -3093,9 +3320,7 @@
             }
 
             if (App.state.paperType === "label" && App.state.label.mode === "design") return 1;
-
             if (canvasState.maxSerialCount > 1) return canvasState.maxSerialCount;
-
             return 1;
           },
 
@@ -3124,7 +3349,6 @@
             const sheetSel = document.getElementById("dsSheetSelect");
             const rowCount = document.getElementById("dsRowCount");
             const fieldList = document.getElementById("dsFieldList");
-
             if (!s.isActive) {
               noData.classList.remove("hidden");
               loaded.classList.add("hidden");
@@ -3134,7 +3358,6 @@
             noData.classList.add("hidden");
             loaded.classList.remove("hidden");
             loaded.classList.add("flex");
-
             fileNameEl.innerText = s.fileName;
             sheetSel.innerHTML = "";
             s.sheetNames.forEach((name) => {
@@ -3144,9 +3367,7 @@
               if (name === s.currentSheet) opt.selected = true;
               sheetSel.appendChild(opt);
             });
-
             rowCount.innerText = `${s.data.length} 条数据`;
-
             fieldList.innerHTML = "";
             if (s.headers.length === 0) {
               fieldList.innerHTML = '<li class="text-center text-gray-400 py-4 text-xs">暂无字段</li>';
@@ -3165,14 +3386,10 @@
           batchUpdateBinding: function () {
             const s = App.state.dataSource;
             if (!s.isActive || !s.currentSheet) return Utils.toast("请先加载数据源", "error");
-
             const targetSheet = s.currentSheet;
             const validFields = s.headers;
-
             if (!validFields || validFields.length === 0) return Utils.toast("目标工作表为空或无字段", "error");
-
             let count = 0;
-
             const tryUpdate = (binding) => {
               if (binding && binding.type === "variable") {
                 if (validFields.includes(binding.field)) {
@@ -3184,21 +3401,17 @@
               }
               return false;
             };
-
             if (App.state.paperType === "label" && App.state.label.mode === "preview") {
               const designJSON = App.state.label.designContent;
               if (!designJSON || !designJSON.objects) return;
-
               designJSON.objects.forEach((obj) => {
                 if (tryUpdate(obj.dataBinding)) count++;
-
                 if (obj.isTable && obj.tableData && obj.tableData.cells) {
                   obj.tableData.cells.flat().forEach((cell) => {
                     if (tryUpdate(cell.dataBinding)) count++;
                   });
                 }
               });
-
               if (count > 0) {
                 App.label.renderPreview();
                 Utils.toast(`已更新${count}个字段`);
@@ -3211,7 +3424,6 @@
             const objs = App.canvas.getObjects();
             objs.forEach((obj) => {
               let updated = false;
-
               if (tryUpdate(obj.dataBinding)) {
                 updated = true;
               }
@@ -3220,7 +3432,6 @@
                 obj.tableData.cells.flat().forEach((cell) => {
                   if (tryUpdate(cell.dataBinding)) updated = true;
                 });
-
                 if (updated) {
                   App.tableEditor._replaceTableOnCanvas(obj, obj.tableData);
                   updated = false;
@@ -3230,7 +3441,6 @@
 
               if (updated) count++;
             });
-
             if (count > 0) {
               this.refreshBindingState();
               App.ui.updateInspector();
@@ -3249,12 +3459,9 @@
             if (max === 0) pageIndex = 0;
             App.state.currentDataIndex = pageIndex;
             if (!this._sheetCache) this._sheetCache = {};
-
             if (s.isActive && s.workbook) {
               const objs = App.canvas.getObjects();
               const sheetsToCache = new Set();
-
-              // 收集所有需要的工作表
               objs.forEach((obj) => {
                 if (obj.dataBinding?.type === "variable" && obj.dataBinding.sheet) {
                   sheetsToCache.add(obj.dataBinding.sheet);
@@ -3267,8 +3474,6 @@
                   });
                 }
               });
-
-              // 预先缓存所有工作表
               sheetsToCache.forEach((sheetName) => {
                 if (!this._sheetCache[sheetName]) {
                   const ws = s.workbook.Sheets[sheetName];
@@ -3290,7 +3495,6 @@
                 if (obj.type === "image" && obj.dataBinding && obj.dataBinding.type === "variable") {
                   const originalSheet = obj.dataBinding.sheet;
                   const filename = this._getBoundValue(obj, pageIndex);
-
                   if (obj.dataBinding.sheet !== originalSheet) {
                     obj.dataBinding.sheet = originalSheet;
                   }
@@ -3350,10 +3554,8 @@
           _getBoundValue: function (obj, pageIndex) {
             const binding = obj.dataBinding;
             if (!binding || binding.type !== "variable" || !binding.field) return null;
-
             const s = App.state.dataSource;
             const targetSheet = binding.sheet || s.currentSheet;
-
             if (!this._sheetCache[targetSheet]) {
               const ws = s.workbook?.Sheets[targetSheet];
               if (ws) {
@@ -3369,16 +3571,13 @@
 
             const rowData = this._sheetCache[targetSheet][pageIndex];
             if (!rowData) return "";
-
             const val = rowData[binding.field];
             return val !== undefined && val !== null ? String(val) : "";
           },
 
           _updateTableData: function (tableObj, pageIndex) {
             if (!tableObj.tableData || !tableObj.tableData.cells) return false;
-
             let tableChanged = false;
-
             tableObj.tableData.cells.forEach((row) => {
               row.forEach((cell) => {
                 const mockObj = { dataBinding: cell.dataBinding };
@@ -3398,7 +3597,6 @@
                 }
               });
             });
-
             if (tableChanged) {
               App.tableEditor._replaceTableOnCanvas(tableObj, tableObj.tableData);
             }
@@ -3408,9 +3606,7 @@
           _updateImageAsync: async function (obj, filename) {
             obj._lastRenderedFile = filename;
             obj._imgLoaded = true;
-
             let blobUrl = null;
-
             if (filename && obj.imgDirId) {
               try {
                 const blob = await this.getImageBlob(filename, obj.imgDirId);
@@ -3432,9 +3628,7 @@
 
             return new Promise((resolve) => {
               const targetVisualWidth = obj.getScaledWidth();
-
               const { left, top, angle, originX, originY } = obj;
-
               obj.setSrc(blobUrl, (newImg) => {
                 newImg.set({
                   left,
@@ -3464,7 +3658,6 @@
 
           nav: async function (action, val) {
             const isLabelPreview = App.state.paperType === "label" && App.state.label.mode === "preview";
-
             if (isLabelPreview) {
               const cfg = App.paper.getSettings();
               const ds = App.state.dataSource;
@@ -3475,7 +3668,6 @@
               const itemsPerPage = cfg.labelCols * cfg.labelRows;
               const maxPages = Math.ceil(totalCount / itemsPerPage);
               let current = App.state.label.previewPage || 0;
-
               let next = current;
               switch (action) {
                 case "first":
@@ -3503,7 +3695,6 @@
             const current = App.state.currentDataIndex;
             const max = this.calculateTotalPages();
             let next = current;
-
             switch (action) {
               case "first":
                 next = 0;
@@ -3526,21 +3717,17 @@
 
           updateNavUI: function () {
             const max = this.calculateTotalPages();
-
             let current = App.state.currentDataIndex;
             if (current >= max) {
               current = max - 1;
               App.state.currentDataIndex = current;
             }
             if (current < 0) current = 0;
-
             const navBar = document.getElementById("dataNavBar");
             const input = document.getElementById("vdpIndexInput");
             const total = document.getElementById("vdpTotal");
-
             if (max > 1) {
               navBar.classList.remove("hidden");
-
               if (App.state.paperType === "label" && App.state.label.mode === "preview") {
                 input.value = (App.state.label.previewPage || 0) + 1;
               } else {
@@ -3573,7 +3760,6 @@
                 mode: "read",
               });
               if (perm !== "granted") return;
-
               const file = await s.fileHandle.getFile();
               if (file.lastModified > s.lastModified + 1000) {
                 Utils.toast("数据源已更新！");
@@ -3589,7 +3775,6 @@
             }
             const { fileHandleId, fileName, currentSheet } = meta;
             App.state.dataSource.currentSheet = currentSheet;
-
             try {
               const handle = await idbKeyval.get(fileHandleId);
               if (handle) {
@@ -3718,9 +3903,7 @@
           },
         },
 
-        // --- 纸张与网格系统 ---
         paper: {
-          // 纸张类型默认参数配置
           defaults: {
             blank: {
               label: "空白纸",
@@ -3849,43 +4032,33 @@
           },
 
           renderers: {
-            // 0.空白纸渲染器
             blank: function (cfg, canvas) {
               return;
             },
-            // 1. 横线纸渲染器
+            
             ruled: function (cfg, canvas, opts = {}) {
               if (cfg.rowCount <= 0) return;
-
               const GAP = 3;
               const thickW = cfg.strokeWidth + 2;
-
               const padTop = cfg.doubleFirst ? GAP + thickW / 2 : cfg.strokeWidth / 2;
               const padBottom = cfg.doubleLast ? GAP + thickW / 2 : cfg.strokeWidth / 2;
               const padX = cfg.ruledClosed && cfg.ruledClosedDouble ? GAP + thickW / 2 : cfg.strokeWidth / 2;
-
               const startX = Math.max(cfg.marginLeft, padX);
               const endX = App.state.baseWidth - Math.max(cfg.marginRight, padX);
               const startY = Math.max(cfg.marginTop, padTop) + (opts.startYOffset || 0);
               const contentHeight = App.state.baseHeight - Math.max(cfg.marginBottom, padBottom) - startY;
-
               if (endX - startX <= 0 || contentHeight <= 0) return;
-
               const lineHeight = contentHeight / cfg.rowCount;
               const gridLines = [];
               const dashArr = cfg.gridDashed ? [cfg.gridDashArray, cfg.gridDashArray] : null;
-
-              // 计算闭合边框的坐标边界
               const outerTop = cfg.doubleFirst ? startY - GAP : startY;
               const outerBottom = cfg.doubleLast ? startY + cfg.rowCount * lineHeight + GAP : startY + cfg.rowCount * lineHeight;
               const innerTop = cfg.doubleFirst ? startY + GAP : startY;
               const innerBottom = cfg.doubleLast ? startY + cfg.rowCount * lineHeight - GAP : startY + cfg.rowCount * lineHeight;
-
               let xOuterL = startX,
                 xOuterR = endX;
               let xInnerL = startX,
                 xInnerR = endX;
-
               if (cfg.ruledClosed && cfg.ruledClosedDouble) {
                 xOuterL = startX - GAP;
                 xOuterR = endX + GAP;
@@ -3909,7 +4082,6 @@
                   }),
                 );
               };
-
               for (let i = 0; i <= cfg.rowCount; i++) {
                 const y = startY + i * lineHeight;
                 if (i === 0 && cfg.doubleFirst) {
@@ -3947,7 +4119,6 @@
                 const extendDist = thickW / 2;
                 const outerY1 = outerTop - extendDist;
                 const outerY2 = outerBottom + extendDist;
-
                 const drawEdge = (x, side) => {
                   if (cfg.ruledClosedDouble) {
                     const outerX = side === "left" ? x - GAP : x + GAP;
@@ -3981,24 +4152,20 @@
               });
             },
 
-            // 2. 英文纸渲染器
             english: function (cfg, canvas) {
               const startX = cfg.marginLeft;
               const endX = App.state.baseWidth - cfg.marginRight;
               const startY = cfg.marginTop + cfg.englishOffset;
               const usableHeight = App.state.baseHeight - startY - cfg.marginBottom;
               if (usableHeight <= 0 || endX - startX <= 0) return;
-
               const lineGap = Math.max(cfg.englishLineGap, 1);
               const groupGap = Math.max(0, cfg.englishGroupGap ?? cfg.englishLineGap);
               const cellHeight = lineGap * 3;
               const maxGroups = Math.max(0, Math.floor((usableHeight + groupGap) / (cellHeight + groupGap)));
               const staffCount = Math.min(cfg.rowCount, maxGroups);
               if (staffCount <= 0) return;
-
               const dashArr = cfg.gridDashed ? [cfg.gridDashArray, cfg.gridDashArray] : null;
               const lines = [];
-
               for (let s = 0; s < staffCount; s++) {
                 const base = startY + s * (cellHeight + groupGap);
                 for (let i = 0; i < 4; i++) {
@@ -4024,14 +4191,12 @@
               });
             },
 
-            // 3. 方格纸渲染器
             grid: function (cfg, canvas) {
               const startX = cfg.marginLeft;
               const endX = App.state.baseWidth - cfg.marginRight;
               const startY = cfg.marginTop;
               const endY = App.state.baseHeight - cfg.marginBottom;
               if (endX - startX <= 0 || endY - startY <= 0) return;
-
               const cols = Math.max(1, cfg.gridColumns || 1);
               const cellSizeX = (endX - startX) / cols;
               let rows = Math.max(1, Math.round((endY - startY) / cellSizeX));
@@ -4039,12 +4204,10 @@
               cellSize = Math.min(cellSize, cellSizeX);
               rows = Math.max(1, Math.round((endY - startY) / cellSize));
               cellSize = (endY - startY) / rows;
-
               const gridW = cellSize * cols;
               const gridH = endY - startY;
               const dash = cfg.gridDashed ? [cfg.gridDashArray, cfg.gridDashArray] : null;
               const lines = [];
-
               for (let i = 1; i < cols; i++) {
                 const x = startX + i * cellSize;
                 lines.push(
@@ -4081,31 +4244,24 @@
               }
 
               this._drawBorder(canvas, startX, startY, gridW, gridH, cfg);
-
               lines.forEach((l) => {
                 canvas.add(l);
                 canvas.sendToBack(l);
               });
             },
 
-            // 4. 作文纸渲染器
             composition: function (cfg, canvas) {
               if (cfg.rowCount <= 0) return;
               const startX = cfg.marginLeft;
               const startY = cfg.marginTop;
               const availW = App.state.baseWidth - cfg.marginLeft - cfg.marginRight;
               const availH = App.state.baseHeight - cfg.marginTop - cfg.marginBottom;
-
               if (availW <= 0 || availH <= 0) return;
-
               const colCount = Math.max(1, cfg.columnCount);
               const rowCount = Math.max(1, cfg.rowCount);
-
               const cellW = availW / colCount;
               const totalRowH = availH / rowCount;
-
               const cellH = totalRowH * 0.75;
-
               const lines = [];
               const hLineOpts = {
                 stroke: cfg.gridColor,
@@ -4118,11 +4274,9 @@
                 originY: "center",
                 strokeLineCap: "butt",
               };
-
               for (let r = 0; r < rowCount; r++) {
                 const currentTop = startY + r * totalRowH;
                 const currentBottom = currentTop + cellH;
-
                 for (let c = 1; c < colCount; c++) {
                   const x = startX + c * cellW;
                   lines.push(new fabric.Line([x, currentTop, x, currentBottom], hLineOpts));
@@ -4133,29 +4287,23 @@
               }
 
               this._drawBorder(canvas, startX, startY, availW, availH, cfg);
-
               lines.forEach((l) => {
                 canvas.add(l);
                 canvas.sendToBack(l);
               });
             },
 
-            //5.乐谱纸渲染器
             music: function (cfg, canvas) {
               const startX = cfg.marginLeft;
               const endX = App.state.baseWidth - cfg.marginRight;
               const availHeight = App.state.baseHeight - cfg.marginTop - cfg.marginBottom;
               if (availHeight <= 0 || endX - startX <= 0) return;
-
               let lineGap = Math.max(1, cfg.staffLineGap);
               let groupGap = Math.max(0, cfg.staffGroupGap);
-
               const lineCount = Math.max(1, cfg.staffLineCount);
               const spaceCount = Math.max(0, lineCount - 1);
               const staffHeight = lineGap * spaceCount;
-
               let totalHeight = cfg.staffCount * staffHeight + (cfg.staffCount - 1) * groupGap;
-
               if (totalHeight > availHeight) {
                 const scale = availHeight / totalHeight;
                 lineGap *= scale;
@@ -4164,12 +4312,9 @@
 
               const finalStaffHeight = lineGap * spaceCount;
               const startY = cfg.marginTop + (availHeight - (cfg.staffCount * finalStaffHeight + (cfg.staffCount - 1) * groupGap)) / 2;
-
               const lines = [];
-
               for (let s = 0; s < cfg.staffCount; s++) {
                 const top = startY + s * (finalStaffHeight + groupGap);
-
                 for (let i = 0; i < lineCount; i++) {
                   const y = top + i * lineGap;
                   lines.push(
@@ -4199,9 +4344,7 @@
               const startY = Math.max(cfg.marginTop, borderPad);
               const endX = App.state.baseWidth - Math.max(cfg.marginRight, borderPad);
               const endY = App.state.baseHeight - Math.max(cfg.marginBottom, borderPad);
-
               if (endX - startX <= 0 || endY - startY <= 0) return;
-
               let baseSize = Math.max(6, cfg.tianSize);
               let cols = Math.max(1, Math.round((endX - startX) / baseSize));
               let rows = Math.max(1, Math.round((endY - startY) / baseSize));
@@ -4212,14 +4355,11 @@
               size = Math.min(size, (endX - startX) / cols);
               const gridW = cols * size;
               const gridH = rows * size;
-
               const scale = cfg.tianInnerScale || 0.4;
               const calculatedWidth = cfg.strokeWidth * scale;
               const innerWidth = Math.max(0.3, Math.min(calculatedWidth, cfg.strokeWidth - 0.1));
               const innerDash = cfg.gridDashed ? [cfg.gridDashArray, cfg.gridDashArray] : null;
-
               const lines = [];
-              // 绘制外框网格线
               for (let c = 1; c < cols; c++) {
                 const x = startX + c * size;
                 lines.push(
@@ -4262,15 +4402,12 @@
                 originY: "center",
                 strokeLineCap: "butt",
               };
-
-              // 绘制内部结构
               for (let c = 0; c < cols; c++) {
                 for (let r = 0; r < rows; r++) {
                   const x = startX + c * size;
                   const y = startY + r * size;
                   const cx = x + size / 2;
                   const cy = y + size / 2;
-
                   if (options.subGrid) {
                     const nCols = Math.max(1, cfg.jiuCols);
                     const nRows = Math.max(1, cfg.jiuRows);
@@ -4367,7 +4504,6 @@
               });
             },
 
-            // 6. 点阵纸渲染器
             dots: function (cfg, canvas) {
               const startX = cfg.marginLeft;
               const startY = cfg.marginTop;
@@ -4375,33 +4511,24 @@
               const endY = App.state.baseHeight - cfg.marginBottom;
               const w = endX - startX;
               const h = endY - startY;
-
               if (w <= 0 || h <= 0) return;
-
               const space = Math.max(2, cfg.dotSpace);
               const r = cfg.dotSize / 2;
               const epsilon = 0.01;
-
               const rowHeight = cfg.dotStagger ? (space * Math.sqrt(3)) / 2 : space;
               const cols = Math.ceil(w / space);
               const rows = Math.ceil(h / rowHeight);
-
               const contentW = cols * space;
               const contentH = rows * rowHeight;
               const offsetX = (w - contentW) / 2 + (cfg.dotStagger ? space / 4 : 0);
               const offsetY = (h - contentH) / 2;
-
               let pathData = "";
-
               for (let row = -1; row <= rows + 1; row++) {
                 const isStagger = cfg.dotStagger && row % 2 !== 0;
                 const staggerX = isStagger ? space / 2 : 0;
-
                 for (let col = -1; col <= cols + 1; col++) {
                   const cx = startX + offsetX + col * space + staggerX;
                   const cy = startY + offsetY + row * rowHeight;
-
-                  // 过滤超出边距的点
                   if (cx - r < startX - epsilon || cx + r > endX + epsilon || cy - r < startY - epsilon || cy + r > endY + epsilon) {
                     continue;
                   }
@@ -4422,7 +4549,6 @@
               });
             },
 
-            // 7. 三角形网格渲染器
             triangle: function (cfg, canvas) {
               const startX = cfg.marginLeft;
               const startY = cfg.marginTop;
@@ -4430,30 +4556,24 @@
               const endY = App.state.baseHeight - cfg.marginBottom;
               const w = endX - startX;
               const h = endY - startY;
-
               if (w <= 0 || h <= 0) return;
-
               const side = Math.max(2, cfg.geoSize);
               const triHeight = (Math.sqrt(3) / 2) * side;
               const cols = Math.ceil(w / side) + 2;
               const rows = Math.ceil(h / triHeight) + 2;
-
               let pathData = "";
-
               const addClippedLine = (x1, y1, x2, y2) => {
                 const line = Utils.clipLine(x1, y1, x2, y2, startX, startY, endX, endY);
                 if (line) {
                   pathData += `M ${line.x1.toFixed(2)} ${line.y1.toFixed(2)} L ${line.x2.toFixed(2)} ${line.y2.toFixed(2)} `;
                 }
               };
-
               for (let row = -1; row < rows; row++) {
                 const yBase = startY + row * triHeight;
                 const offsetX = row % 2 === 0 ? 0 : side / 2;
                 for (let col = -1; col < cols; col++) {
                   const cx = startX + col * side + offsetX;
                   if (cx < startX - side && cx > endX + side && yBase < startY - triHeight && yBase > endY + triHeight) continue;
-
                   addClippedLine(cx, yBase, cx - side / 2, yBase + triHeight);
                   addClippedLine(cx - side / 2, yBase + triHeight, cx + side / 2, yBase + triHeight);
                   addClippedLine(cx + side / 2, yBase + triHeight, cx, yBase);
@@ -4469,7 +4589,6 @@
               });
             },
 
-            // 8. 六边形网格渲染器
             hexagon: function (cfg, canvas) {
               const startX = cfg.marginLeft;
               const startY = cfg.marginTop;
@@ -4477,32 +4596,25 @@
               const endY = App.state.baseHeight - cfg.marginBottom;
               const w = endX - startX;
               const h = endY - startY;
-
               if (w <= 0 || h <= 0) return;
-
               const r = cfg.geoSize;
               const hexW = Math.sqrt(3) * r;
               const vertDist = 1.5 * r;
               const cols = Math.ceil(w / hexW) + 2;
               const rows = Math.ceil(h / vertDist) + 2;
-
               let pathData = "";
-
               const addClippedLine = (x1, y1, x2, y2) => {
                 const line = Utils.clipLine(x1, y1, x2, y2, startX, startY, endX, endY);
                 if (line) {
                   pathData += `M ${line.x1.toFixed(2)} ${line.y1.toFixed(2)} L ${line.x2.toFixed(2)} ${line.y2.toFixed(2)} `;
                 }
               };
-
               for (let row = -1; row < rows; row++) {
                 for (let col = -1; col < cols; col++) {
                   const xOffset = row % 2 !== 0 ? hexW / 2 : 0;
                   const cx = startX + col * hexW + xOffset;
                   const cy = startY + row * vertDist;
-
                   if (cx < startX - hexW || cx > endX + hexW || cy < startY - r || cy > endY + r) continue;
-
                   const pts = [];
                   for (let i = 0; i < 6; i++) {
                     const angle = (Math.PI / 180) * (30 + 60 * i);
@@ -4528,7 +4640,6 @@
 
             label: function (cfg, canvas) {
               if (App.state.label.mode !== "design") return;
-              // 只是简单画个边框表示标签边界
               const w = App.state.baseWidth;
               const h = App.state.baseHeight;
               canvas.add(
@@ -4545,7 +4656,7 @@
                 }),
               );
             },
-            // --- 通用路径添加方法 ---
+            
             _addPathToCanvas: function (canvas, pathData, cfg, styleOpts) {
               if (!pathData || pathData.length === 0) return;
               const opts = {
@@ -4594,7 +4705,6 @@
               });
             },
 
-            // --- 边框绘制方法 ---
             _drawBorder: function (canvas, x, y, w, h, cfg) {
               if (cfg.doubleBorder) this._drawDoubleFrame(canvas, x, y, w, h, cfg);
               else this._drawSingleFrame(canvas, x, y, w, h, cfg);
@@ -4642,7 +4752,6 @@
               };
               const centerX = x + w / 2;
               const centerY = y + h / 2;
-
               canvas.add(
                 new fabric.Rect({
                   ...common,
@@ -4667,7 +4776,6 @@
             },
           },
 
-          // 纸张初始化
           init: function () {
             const select = document.getElementById("paperType");
             if (select) {
@@ -4764,7 +4872,6 @@
               return isNaN(n) ? def : n;
             };
             const chk = (id) => (el(id) ? el(id).checked : false);
-
             const cfg = {
               customW: intVal("customW", 210),
               customH: intVal("customH", 297),
@@ -4814,7 +4921,6 @@
               labelQuantity: intVal("labelQuantity", 1),
               showCropMarks: chk("showCropMarks"),
             };
-
             if (chk("fitLabelSize")) {
               cfg.labelCols = cfg.labelRows = 1;
               cfg.showCropMarks = false;
@@ -4831,7 +4937,6 @@
             const fitLabel = el("fitLabelSize") && el("fitLabelSize").checked;
             const isDesign = type === "label" && App.state.label.mode === "design";
             App.state.paperType = type;
-
              const customSizeInputs = el("customSizeInputs");
               if (customSizeInputs) {
                 if (sizeKey === "CUSTOM") {
@@ -4898,21 +5003,16 @@
           drawPaper: function () {
             const cfg = this.getSettings();
             const canvas = App.canvas;
-
             canvas.remove(...canvas.getObjects().filter((o) => o.isGrid));
             canvas.setBackgroundColor(cfg.paperBgColor, canvas.requestRenderAll.bind(canvas));
-
             const renderer = this.renderers[cfg.type] || this.renderers.ruled;
-
             try {
               if (cfg.dual && App.state.baseWidth > App.state.baseHeight) {
                 const originalBaseWidth = App.state.baseWidth;
                 const halfWidth = originalBaseWidth / 2;
                 const originalAdd = canvas.add.bind(canvas);
-
                 App.state.baseWidth = halfWidth;
                 renderer.call(this.renderers, cfg, canvas);
-
                 canvas.add = function (...objects) {
                   objects.forEach((obj) => {
                     if (obj) {
@@ -4924,12 +5024,9 @@
                   });
                   originalAdd(...objects);
                 };
-
                 renderer.call(this.renderers, cfg, canvas);
-
                 canvas.add = originalAdd;
                 App.state.baseWidth = originalBaseWidth;
-
                 const midLine = new fabric.Line([halfWidth, 0, halfWidth, App.state.baseHeight], {
                   stroke: "#ccc",
                   strokeWidth: 1,
@@ -4966,24 +5063,19 @@
               App.canvas.renderAll();
               App.state.editingBackground = false;
               App.canvas.discardActiveObject();
-
               App.ui.updateInspector();
               App.ui.updateLayerList();
               App.history.saveState();
-
               Utils.toast("背景图片已移除");
             });
           },
           autoLayoutLabels: function () {
             const type = document.getElementById("paperType").value;
             if (type !== "label") return;
-
             const el = (id) => document.getElementById(id);
             const val = (id) => parseFloat(el(id).value) || 0;
-
             const sizeKey = el("paperSize").value;
             let sheetW, sheetH;
-
             if (sizeKey === "CUSTOM") {
               sheetW = val("customW");
               sheetH = val("customH");
@@ -4995,37 +5087,28 @@
             const isLand = el("paperOrientation").checked;
             const finalSheetW = isLand ? Math.max(sheetW, sheetH) : Math.min(sheetW, sheetH);
             const finalSheetH = isLand ? Math.min(sheetW, sheetH) : Math.max(sheetW, sheetH);
-
             const marginTop = val("marginTop");
             const marginBottom = val("marginBottom");
             const marginLeft = val("marginLeft");
             const marginRight = val("marginRight");
-
             const labelW = val("labelWidth");
             const labelH = val("labelHeight");
             const gapH = val("labelGapH");
             const gapV = val("labelGapV");
-
             if (labelW <= 0 || labelH <= 0) return;
-
             const availW = finalSheetW - marginLeft - marginRight;
             const availH = finalSheetH - marginTop - marginBottom;
-
             const cols = Math.floor((availW + gapH) / (labelW + gapH));
             const rows = Math.floor((availH + gapV) / (labelH + gapV));
-
             el("labelCols").value = Math.max(1, cols);
             el("labelRows").value = Math.max(1, rows);
-
             App.paper.updateSettings();
           },
           calcLabelSizeFromGrid: function () {
             const el = (id) => document.getElementById(id);
             const val = (id) => parseFloat(el(id).value) || 0;
-
             const sizeKey = el("paperSize").value;
             let sheetW, sheetH;
-
             if (sizeKey === "CUSTOM") {
               sheetW = val("customW");
               sheetH = val("customH");
@@ -5037,50 +5120,39 @@
             const isLand = el("paperOrientation").checked;
             const finalSheetW = isLand ? Math.max(sheetW, sheetH) : Math.min(sheetW, sheetH);
             const finalSheetH = isLand ? Math.min(sheetW, sheetH) : Math.max(sheetW, sheetH);
-
             const marginTop = val("marginTop");
             const marginBottom = val("marginBottom");
             const marginLeft = val("marginLeft");
             const marginRight = val("marginRight");
             const gapH = val("labelGapH");
             const gapV = val("labelGapV");
-
             const cols = parseInt(el("labelCols").value) || 1;
             const rows = parseInt(el("labelRows").value) || 1;
-
             if (cols < 1 || rows < 1) return Utils.toast("行列数必须大于0", "error");
             const availW = finalSheetW - marginLeft - marginRight;
             const availH = finalSheetH - marginTop - marginBottom;
-
             const totalGapW = (cols - 1) * gapH;
             const totalGapH = (rows - 1) * gapV;
-
             let newW = (availW - totalGapW) / cols;
             let newH = (availH - totalGapH) / rows;
-
             newW = Math.floor(newW * 10) / 10;
             newH = Math.floor(newH * 10) / 10;
-
             if (newW <= 0 || newH <= 0) {
               return Utils.toast("计算结果无效，请检查边距或间距设置", "error");
             }
 
             el("labelWidth").value = newW;
             el("labelHeight").value = newH;
-
             this.updateSettings();
           },
         },
 
-        // --- 缩放管理 ---
         zoom: {
           change: function (delta, point) {
             const oldScale = App.state.zoom;
             const newScale = Math.max(0.1, Math.min(5, oldScale + delta));
             if (newScale === oldScale) return;
-
             this.apply(newScale);
-
             if (point) {
               const ct = document.getElementById("scrollContainer");
               const factor = newScale / oldScale;
@@ -5108,20 +5180,17 @@
             App.state.zoom = scale;
             const w = Math.round(App.state.baseWidth * scale);
             const h = Math.round(App.state.baseHeight * scale);
-
             App.canvas
               .setDimensions({
                 width: w,
                 height: h,
               })
               .setZoom(scale);
-
             const vp = document.getElementById("zoomViewport");
             const ct = document.getElementById("scrollContainer");
             if (vp && ct) {
               vp.style.width = w + "px";
               vp.style.height = h + "px";
-
               const mt = Math.max(40, (ct.clientHeight - h) / 2);
               vp.style.marginTop = mt + "px";
             }
@@ -5132,19 +5201,16 @@
           },
         },
 
-        // --- 事件处理模块 ---
         events: {
           initEvents: function () {
             const container = document.getElementById("scrollContainer");
             const canvasWrap = document.getElementById("canvasWrapper");
-
             let startX = 0,
               startY = 0,
               scrollLeft = 0,
               scrollTop = 0;
             let dragOrigin = null,
               isDragThresholdPassed = false;
-
             const updateSelectionQueue = (e) => {
               if (App.state.isReplacingObject) return;
               const { selected, deselected } = e;
@@ -5166,12 +5232,9 @@
                 });
               App.ui.updateInspector();
             };
-
             const handleLiveTransform = (e) => {
               const t = e.target;
-
               if (e.transform?.action === "scale" && t.isTable) t.__tableScaling = true;
-
               if (["i-text", "textbox", "text"].includes(t.type) && e.transform?.action === "scale") {
                 if (Math.abs(t.scaleX - t.scaleY) < 0.01 && Math.abs(t.scaleX - 1) > 0.001) {
                   const newSize = t.fontSize * t.scaleX;
@@ -5181,7 +5244,6 @@
                     scaleY: 1,
                   });
                   if (t.type === "textbox") t.width *= t.scaleX;
-
                   const propSize = document.getElementById("propSize");
                   if (propSize) propSize.value = Utils.px2pt(newSize);
                 }
@@ -5203,7 +5265,6 @@
                   });
               }
             };
-
             const handleObjectModified = (e) => {
               const t = e.target;
               if (!t) return;
@@ -5234,19 +5295,16 @@
                 }
               }
 
-
               if (t.type === "textbox") {
                 const finalW = Math.round(t.width * t.scaleX);
                 const finalH = Math.round(t.height * t.scaleY);
                 const finalFontSize = t.fontSize * t.scaleY;
-
                 t.set({
                   width: Math.max(finalW, 50),
                   fontSize: finalFontSize,
                   scaleX: 1,
                   scaleY: 1,
                 });
-
                 if (finalH > t.height) t.set("height", finalH);
                 t.__manualHeight = finalH;
                 t.setCoords();
@@ -5254,16 +5312,10 @@
               App.ui.updateInspector();
               App.canvas.requestRenderAll();
             };
-
-            // ============================================================
-            // 2. Fabric Canvas 事件绑定
-            // ============================================================
             App.canvas.on({
               "mouse:down": (opt) => {
                 const target = opt.target;
                 const isAlt = opt.e.altKey;
-
-                // 记录拖拽起始点
                 if (target && !isAlt && !target.isGrid) {
                   dragOrigin = {
                     left: target.left,
@@ -5274,15 +5326,12 @@
                   dragOrigin = null;
                 }
 
-                // 处理画布平移 vs 框选
                 if (!target || target.isGrid) {
                   if (isAlt) {
-                    // Alt+拖动 = 框选模式
                     App.state.isPanning = false;
                     App.canvas.selection = true;
                     App.canvas.defaultCursor = "default";
                   } else {
-                    // 默认拖动 = 平移画布
                     App.state.isPanning = true;
                     App.canvas.selection = false;
                     startX = opt.e.clientX;
@@ -5345,12 +5394,6 @@
               "object:resizing": handleLiveTransform,
               "object:modified": handleObjectModified,
             });
-
-            // ============================================================
-            // 3. 容器 DOM 事件 (平移、缩放、点击空白)
-            // ============================================================
-
-            // 画布平移
             document.addEventListener(
               "mousemove",
               (e) => {
@@ -5364,8 +5407,6 @@
                 passive: false,
               },
             );
-
-            // 滚轮缩放
             container.addEventListener(
               "wheel",
               (e) => {
@@ -5383,8 +5424,6 @@
                 passive: false,
               },
             );
-
-            // 点击空白处取消选中
             container.addEventListener("mousedown", (e) => {
               if (["scrollContainer", "zoomViewport", "canvasWrapper"].includes(e.target.id) && App.canvas.getActiveObject()) {
                 App.canvas.discardActiveObject();
@@ -5392,8 +5431,6 @@
                 App.ui.updateInspector();
               }
             });
-
-            // 标尺与自适应
             container.addEventListener(
               "scroll",
               Utils.throttle(() => App.ruler.draw(), 10),
@@ -5402,14 +5439,9 @@
               "resize",
               Utils.throttle(() => App.zoom.autoFit(), 200),
             );
-
-            // ============================================================
-            // 4. 拖拽数据源 (Drag & Drop)
-            // ============================================================
             const fieldListContainer = document.getElementById("dsFieldList");
             if (fieldListContainer) {
               fieldListContainer.addEventListener("dragstart", (e) => {
-                // 防止拖拽到图标
                 const target = e.target.closest("li");
                 if (target && target.dataset.field) {
                   const data = {
@@ -5426,22 +5458,16 @@
               e.preventDefault();
               e.dataTransfer.dropEffect = "copy";
             });
-
             canvasWrap.addEventListener("drop", (e) => {
               e.preventDefault();
               const rawData = e.dataTransfer.getData("application/paper-field");
               if (!rawData) return;
-
               try {
                 const { sheet, field } = JSON.parse(rawData);
-
-                // 计算落点坐标
                 const rect = App.canvas.getElement().getBoundingClientRect();
                 const zoom = App.canvas.getZoom();
                 const x = (e.clientX - rect.left) / zoom;
                 const y = (e.clientY - rect.top) / zoom;
-
-                // 获取预览数据
                 let initialText = field;
                 const ds = App.state.dataSource;
                 if (ds.isActive && ds.data.length > 0) {
@@ -5450,7 +5476,6 @@
                   if (val !== undefined && val !== null) initialText = String(val);
                 }
 
-                // 创建文本对象 (使用 SimHei)
                 const textObj = new fabric.IText(initialText, {
                   left: x,
                   top: y,
@@ -5460,35 +5485,25 @@
                   originX: "left",
                   originY: "top",
                 });
-
                 textObj.dataBinding = {
                   type: "variable",
                   sheet,
                   field,
                 };
-
                 App.tools._addToCanvas(textObj);
                 App.dataSource.refreshBindingState();
               } catch (err) {
                 console.error("Drop error", err);
               }
             });
-
-            // ============================================================
-            // 5. 全局 UI 事件 (原底部脚本内容)
-            // ============================================================
-
-            // 文件上传输入框绑定
             const bindInput = (id, handler) => {
               const el = document.getElementById(id);
               if (el) {
-                // 使用 function 保留 this 上下文指向 input 元素
                 el.onchange = function () {
                   handler.call(this);
                 };
               }
             };
-
             bindInput("imgUpload", function () {
               App.tools.handleImageUpload(this);
             });
@@ -5498,8 +5513,6 @@
             bindInput("imgReplaceInput", function () {
               App.tools.replaceActiveImage(this);
             });
-
-            // 模态框点击背景关闭
             const bindModalClose = (id) => {
               const el = document.getElementById(id);
               if (el) {
@@ -5511,8 +5524,6 @@
             bindModalClose("welcomeModal");
             bindModalClose("contactModal");
             bindModalClose("sponsorModal");
-
-            // 全屏状态图标切换
             document.addEventListener("fullscreenchange", () => {
               const icon = document.getElementById("fsIcon");
               if (icon) {
@@ -5523,7 +5534,6 @@
                 App.ruler.init();
               }, 100);
             });
-
             window.addEventListener("beforeunload", (e) => {
               if (App.state.hasUnsavedChanges) {
                 e.preventDefault();
@@ -5533,7 +5543,6 @@
             });
           },
 
-          // --- 初始化绑定 ---
           initHotkeys: function () {
             const isInput = () => ["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName) || document.activeElement?.contentEditable === "true";
             hotkeys("ctrl+z,command+z", (e) => {
@@ -5542,12 +5551,10 @@
                 App.history.undo();
               }
             });
-
             hotkeys("ctrl+l,command+l", (e) => {
               e.preventDefault();
               App.tools.toggleLock();
             });
-
             hotkeys("ctrl+y,command+y", (e) => {
               if (!isInput()) {
                 e.preventDefault();
@@ -5605,31 +5612,47 @@
           },
         },
 
-        // --- 本地字体加载 ---
         loadLocalFonts: async function () {
           if (App.state.localFontsLoaded || !window.queryLocalFonts) return;
           try {
             App.state.localFontsLoaded = true;
-            const fonts = await window.queryLocalFonts();
-            App.state.availabelFonts = fonts; // 保存供转曲使用
+            const fonts = await App.fontManager.queryLocalFonts();
+            const sortedFonts = fonts.sort((a, b) => {
+              if (a.family === b.family) {
+                return a.fullName.localeCompare(b.fullName);
+              }
+              return a.family.localeCompare(b.family);
+            });
+            if (!document.getElementById("local-fonts-style")) {
+              const style = document.createElement("style");
+              style.id = "local-fonts-style";
+              let cssText = "";
+              for (const f of sortedFonts) {
+                cssText += `@font-face { font-family: "${f.postscriptName}"; src: local("${f.postscriptName}"), local("${f.fullName}"); }\n`;
+              }
+              style.textContent = cssText;
+              document.head.appendChild(style);
+              setTimeout(() => {
+                if (App.canvas) App.canvas.requestRenderAll();
+              }, 100);
+            }
 
-            const sortedFonts = fonts.sort((a, b) => a.family.localeCompare(b.family));
             const targetIds = ["propFont", "floatFontFamily"];
-
             targetIds.forEach((id) => {
               const select = document.getElementById(id);
               if (!select) return;
               const seen = new Set([...select.options].map((o) => o.value));
-              if (!seen.has("---sep---")) select.add(new Option("--- 本地字体 ---", "---sep---", true, true));
-
+              if (!seen.has("---sep---")) select.add(new Option("--- 本地系统字体 ---", "---sep---", true, true));
               for (const f of sortedFonts) {
-                if (!seen.has(f.family)) {
-                  seen.add(f.family);
-                  const opt = new Option(f.fullName, f.family);
-                  opt.style.fontFamily = f.family;
+                if (!seen.has(f.postscriptName)) {
+                  seen.add(f.postscriptName);
+                  const opt = new Option(f.fullName, f.postscriptName);
+                  opt.style.fontFamily = `"${f.postscriptName}"`;
                   select.add(opt);
                 }
               }
+
+              if (typeof FontPicker !== 'undefined') FontPicker.refresh(select);
             });
           } catch (e) {
             console.warn("Font Access Error", e);
@@ -5637,7 +5660,6 @@
           }
         },
 
-        // --- 画布工具集 ---
         tools: {
           _getCenter: () => ({
             left: App.state.baseWidth / 2,
@@ -5680,12 +5702,10 @@
               lockScalingFlip: true,
               minWidth: 50,
             });
-
             const ctrl = textbox.controls;
             ctrl.ml.actionHandler = ctrl.mr.actionHandler = fabric.controlsUtils.scalingX;
             ctrl.mt.actionHandler = ctrl.mb.actionHandler = fabric.controlsUtils.scalingY;
             textbox.__manualHeight = textbox.height;
-
             textbox.on("editing:exited", function () {
               if (this.__manualHeight && this.height < this.__manualHeight) {
                 this.set("height", this.__manualHeight);
@@ -5724,7 +5744,6 @@
                   size: 14,
                   editable: true,
                 };
-
             const obj = new fabric.IText(opts.text, {
               left: opts.left,
               top: opts.top,
@@ -5735,7 +5754,6 @@
               fill: opts.fill,
               editable: opts.editable,
             });
-
             if (isDyn) {
               obj.isDynamicDate = true;
               obj.dateConfig = {
@@ -5756,7 +5774,6 @@
           addPageNum: function () {
             const hasDataSource = App.state.dataSource.isActive || App.state.paperType === "label";
             const cfg = App.paper.getSettings();
-
             const pageObj = new fabric.IText(hasDataSource ? "第 1 页" : "第   页", {
               left: App.state.baseWidth / 2,
               top: App.state.baseHeight - Utils.mm2px(20),
@@ -5767,7 +5784,6 @@
               originY: "center",
               editable: false,
             });
-
             if (hasDataSource) {
               pageObj.isDynamicPageNum = true;
               pageObj.pageConfig = {
@@ -5783,7 +5799,6 @@
           addLine: function () {
             const cfg = App.paper.getSettings();
             const contentWidth = App.state.baseWidth - cfg.marginLeft - cfg.marginRight;
-
             this._addToCanvas(
               new fabric.Line([0, 0, contentWidth, 0], {
                 left: App.state.baseWidth / 2,
@@ -5862,23 +5877,18 @@
                 fabric.Image.fromURL(e.target.result, (img) => {
                   const canvasW = App.state.baseWidth;
                   const canvasH = App.state.baseHeight;
-
                   const targetW = canvasW * 0.8;
                   const targetH = canvasH * 0.8;
-
                   const scaleX = targetW / img.width;
                   const scaleY = targetH / img.height;
                   const scale = Math.min(scaleX, scaleY);
-
                   img.scale(scale);
-
                   img.set({
                     left: canvasW / 2,
                     top: canvasH / 2,
                     originX: "center",
                     originY: "center",
                   });
-
                   this._addToCanvas(img);
                   input.value = "";
                 });
@@ -5887,7 +5897,6 @@
           },
           addSerialNumber: function () {
             const hasDataSource = App.state.dataSource.isActive || App.state.paperType === "label";
-
             const serialObj = new fabric.IText("1", {
               left: App.state.baseWidth / 2,
               top: App.state.baseHeight / 2,
@@ -5898,9 +5907,7 @@
               originY: "center",
               editable: false,
             });
-
             serialObj.isSerialNumber = true;
-
             serialObj.serialConfig = {
               startValue: "1",
               step: 1,
@@ -5908,7 +5915,6 @@
               changeType: "increment",
               generateCount: hasDataSource ? 1 : 10,
             };
-
             this._addToCanvas(serialObj);
             App.ui.updateInspector();
           },
@@ -5937,10 +5943,8 @@
           replaceActiveImage: function (input) {
             if (!input.files || !input.files[0]) return;
             const file = input.files[0];
-
             let act = App.canvas.getActiveObject();
             let isBgMode = false;
-
             if (!act && App.state.editingBackground && App.canvas.backgroundImage) {
               act = App.canvas.backgroundImage;
               isBgMode = true;
@@ -5953,7 +5957,6 @@
 
             if (isBgMode && App.state.paperType === "label" && App.state.label.mode === "preview") {
               App.label.enterDesign();
-
               act = App.canvas.backgroundImage;
             }
 
@@ -5961,7 +5964,6 @@
               if (isBgMode) {
                 const w = App.state.baseWidth;
                 const h = App.state.baseHeight;
-
                 // 原逻辑看似是 scaleX/scaleY 直接拉伸适配，或者按比例。
 
                 imgObj.scaleX = w / imgObj.width;
@@ -5970,13 +5972,11 @@
                 imgObj.top = h / 2;
                 imgObj.originX = "center";
                 imgObj.originY = "center";
-
                 Utils.toast("背景已更新");
               } else {
                 Utils.toast("图片已替换");
               }
             };
-
             if (isBgMode && !act) {
               const reader = new FileReader();
               reader.onload = (e) => {
@@ -6004,7 +6004,6 @@
                 act,
                 () => {
                   App.canvas.remove(act);
-
                   if (App.canvas.backgroundImage) {
                     App.canvas.backgroundImage.printBackground = true;
                   }
@@ -6031,7 +6030,6 @@
           fillPaper: function () {
             const act = App.canvas.getActiveObject();
             if (!act || act.type !== "image") return Utils.toast("请先选中一张图片", "error");
-
             const w = App.state.baseWidth;
             const h = App.state.baseHeight;
             act.set({
@@ -6043,7 +6041,6 @@
               scaleX: w / act.width,
               scaleY: h / act.height,
             });
-
             act.setCoords();
             App.canvas.requestRenderAll();
             App.ui.updateInspector();
@@ -6180,9 +6177,7 @@
           group: function () {
             const act = App.canvas.getActiveObject();
             if (!act || act.type !== "activeSelection") return;
-
             act.toGroup();
-
             App.canvas.requestRenderAll();
             App.ui.updateLayerList();
             App.ui.updateInspector();
@@ -6191,7 +6186,6 @@
 
           ungroup: function () {
             const act = App.canvas.getActiveObject();
-
             if (!act || act.type !== "group") return;
             if (act.isTable || act.isBarcode) {
               Utils.toast("特殊组件无法解组", "info");
@@ -6199,7 +6193,6 @@
             }
 
             act.toActiveSelection();
-
             App.canvas.requestRenderAll();
             App.ui.updateLayerList();
             App.ui.updateInspector();
@@ -6241,7 +6234,6 @@
             reader.onload = (e) => {
               fabricObj.setSrc(e.target.result, () => {
                 if (callback) callback(fabricObj);
-
                 fabricObj.setCoords();
                 App.canvas.requestRenderAll();
                 App.ui.updateInspector();
@@ -6252,7 +6244,6 @@
           },
         },
 
-        // --- 表格编辑器 ---
         tableEditor: {
           state: {
             rows: 3,
@@ -6268,7 +6259,7 @@
             isSelecting: false,
             selectAnchor: null,
             editingTarget: null,
-            zoom: 1, // 新增：编辑器缩放比例
+            zoom: 1, 
           },
           els: {},
 
@@ -6287,7 +6278,7 @@
               floatMenu: get("tableFloatMenu"),
               insertBtn: get("tableInsertBtn"),
               cancelBtn: get("tableCancelBtn"),
-              // ... 其他原有元素 ...
+              
               floatFont: get("floatFontFamily"),
               floatSize: get("floatFontSize"),
               floatBold: get("floatBoldBtn"),
@@ -6312,7 +6303,6 @@
           attachEvents: function () {
             const e = this.els;
             if (!e.modal) return;
-
             e.insertBtn?.addEventListener("click", () => this.insertIntoCanvas());
             e.cancelBtn?.addEventListener("click", () => this.close());
             e.floatMerge?.addEventListener("click", () => this.mergeSelection());
@@ -6321,7 +6311,6 @@
             e.floatDataBind?.addEventListener("change", () => {
               this.applyDataBinding(e.floatDataBind.value);
             });
-
             const bindInput = (el, key, indicator) => {
               el?.addEventListener(el.tagName === "SELECT" ? "change" : "input", () => {
                 const val = el.type === "number" ? parseFloat(el.value) : el.value;
@@ -6337,7 +6326,6 @@
             bindInput(e.floatBorderW, "borderWidth");
             bindInput(e.floatSize, "fontSize");
             bindInput(e.floatFont, "fontFamily");
-
             if (e.gridBody) {
               e.gridBody.addEventListener("mousedown", (ev) => this.handleMouseDown(ev));
               e.gridBody.addEventListener("input", (ev) => this.handleCellInput(ev));
@@ -6346,7 +6334,6 @@
 
             document.addEventListener("mousemove", (ev) => this.handleMouseMove(ev));
             document.addEventListener("mouseup", () => this.handleMouseUp());
-
             e.editArea?.addEventListener("mousedown", (ev) => {
               if (ev.target === e.editArea) this.clearSelection();
             });
@@ -6367,13 +6354,10 @@
           },
           resizeTable: function (targetRows, targetCols) {
             const s = this.state;
-
             targetRows = Math.min(100, Math.max(1, targetRows));
             targetCols = Math.min(60, Math.max(1, targetCols));
-
             const oldRows = s.rows;
             const oldCols = s.cols;
-
             if (targetRows > oldRows) {
               for (let i = 0; i < targetRows - oldRows; i++) {
                 s.data.push(
@@ -6388,7 +6372,6 @@
               s.rowHeights.length = targetRows;
             }
             s.rows = targetRows;
-
             if (targetCols > oldCols) {
               s.data.forEach((row) => {
                 for (let i = 0; i < targetCols - oldCols; i++) {
@@ -6405,7 +6388,6 @@
               s.colWidths.length = targetCols;
             }
             s.cols = targetCols;
-
             this.updateInputs();
             this.renderGrid();
           },
@@ -6502,7 +6484,6 @@
           open: function (target = null) {
             this.state.selected = [];
             this.setZoom(1);
-
             this.updateFloatMenu();
             if (target?.isTable && target.tableData) {
               this.state.editingTarget = target;
@@ -6579,10 +6560,8 @@
             const indices = new Set();
             sels.forEach((s) => indices.add(type === "row" ? s.row : s.col));
             const sortedIndices = Array.from(indices).sort((a, b) => b - a);
-
             if (type === "row" && this.state.rows - sortedIndices.length < 1) return Utils.toast("至少保留一行", "error");
             if (type === "col" && this.state.cols - sortedIndices.length < 1) return Utils.toast("至少保留一列", "error");
-
             if (type === "row") {
               sortedIndices.forEach((idx) => {
                 this.state.data.splice(idx, 1);
@@ -6643,11 +6622,9 @@
           handleMouseMove: function (e) {
             if (this.state.resizing) {
               e.preventDefault();
-
               const zoom = this.state.zoom || 1;
               const currentVal = this.state.resizing.includes("col") ? e.clientX : e.clientY;
               const startVal = this.state.resizeStartVal;
-
               // 如果是 left/top 边缘，鼠标向负方向移动时，尺寸应该增加，所以要反向计算
               let delta = (currentVal - startVal) / zoom;
               if (this.state.resizing === "col-left" || this.state.resizing === "row-top") {
@@ -6655,7 +6632,6 @@
               }
 
               const newSize = Math.max(20, this.state.resizeStartSize + delta);
-
               if (this.state.resizing.includes("col")) {
                 this.state.colWidths[this.state.resizeIndex] = newSize;
                 const cells = this.els.gridBody.querySelectorAll(`td[data-col="${this.state.resizeIndex}"]`);
@@ -6695,15 +6671,12 @@
 
             const rect = td.getBoundingClientRect();
             const hitTest = 6;
-
             const onRight = Math.abs(e.clientX - rect.right) < hitTest;
             const onBottom = Math.abs(e.clientY - rect.bottom) < hitTest;
-
             const isFirstCol = parseInt(td.dataset.col) === 0;
             const isFirstRow = parseInt(td.dataset.row) === 0;
             const onLeft = isFirstCol && Math.abs(e.clientX - rect.left) < hitTest;
             const onTop = isFirstRow && Math.abs(e.clientY - rect.top) < hitTest;
-
             if (onRight || onLeft) {
               td.style.cursor = "col-resize";
               td.dataset.edge = onRight ? "right" : "left";
@@ -6718,21 +6691,14 @@
 
           handleMouseDown: function (e) {
             const td = e.target.closest("td");
-
             if (!td || (e.button !== 0 && e.button !== 2)) return;
-
             const edge = td.dataset.edge;
-
             if (edge && e.button === 0) {
               e.preventDefault();
-
               let colIdx = parseInt(td.dataset.col);
               let rowIdx = parseInt(td.dataset.row);
-
               if (edge === "right") colIdx += (parseInt(td.colSpan) || 1) - 1;
-
               if (edge === "bottom") rowIdx += (parseInt(td.rowSpan) || 1) - 1;
-
               if (edge === "right" || edge === "left") {
                 this.state.resizing = edge === "left" ? "col-left" : "col";
                 this.state.resizeStartVal = e.clientX;
@@ -6881,7 +6847,10 @@
               sync(this.els.floatBorderC, firstCell.borderColor, this.els.floatBorderInd);
               if (this.els.floatBorderW) this.els.floatBorderW.value = firstCell.borderWidth;
               if (this.els.floatSize) this.els.floatSize.value = firstCell.fontSize;
-              if (this.els.floatFont) this.els.floatFont.value = firstCell.fontFamily;
+              if (this.els.floatFont) {
+                this.els.floatFont.value = firstCell.fontFamily;
+                if (typeof FontPicker !== 'undefined') FontPicker.setValue(this.els.floatFont, firstCell.fontFamily);
+              }
               if (this.els.floatBold) {
                 this.els.floatBold.classList.toggle("text-slate-900", !!firstCell.bold);
                 this.els.floatBold.classList.toggle("bg-gray-100", !!firstCell.bold);
@@ -6925,7 +6894,6 @@
               maxCol = Math.max(...cols);
             if ((maxRow - minRow + 1) * (maxCol - minCol + 1) !== cells.length) return Utils.toast("请选择矩形区域", "error");
             if (cells.some(({ cell }) => cell.rowspan > 1 || cell.colspan > 1)) return Utils.toast("区域含已合并单元格", "error");
-
             const base = this.state.data[minRow][minCol];
             let mergedText = base.text;
             cells.forEach((c, idx) => {
@@ -6934,7 +6902,6 @@
             base.text = mergedText;
             base.rowspan = maxRow - minRow + 1;
             base.colspan = maxCol - minCol + 1;
-
             for (let r = minRow; r <= maxRow; r++) {
               for (let c = minCol; c <= maxCol; c++) {
                 if (r === minRow && c === minCol) continue;
@@ -6992,18 +6959,14 @@
               rowHeights: [...this.state.rowHeights],
               cells: JSON.parse(JSON.stringify(this.state.data)),
             };
-
             if (!this.state.editingTarget && App.state.paperType === "label" && App.state.label.mode === "design") {
               const totalW = config.colWidths.reduce((a, b) => a + b, 0);
               const totalH = config.rowHeights.reduce((a, b) => a + b, 0);
-
               const targetW = App.state.baseWidth * 0.9;
               const targetH = App.state.baseHeight * 0.9;
-
               const scaleX = targetW / totalW;
               const scaleY = targetH / totalH;
               const scale = Math.min(scaleX, scaleY);
-
               if (scale !== 1) {
                 config.colWidths = config.colWidths.map((w) => w * scale);
                 config.rowHeights = config.rowHeights.map((h) => h * scale);
@@ -7041,7 +7004,6 @@
               totalH = rowAcc[rowAcc.length - 1];
             const offsetX = totalW / 2,
               offsetY = totalH / 2;
-
             for (let r = 0; r < config.rows; r++) {
               for (let c = 0; c < config.cols; c++) {
                 const cell = config.cells[r][c];
@@ -7050,7 +7012,6 @@
                 const cellH = rowAcc[r + cell.rowspan] - rowAcc[r];
                 const left = colAcc[c] + cellW / 2 - offsetX;
                 const top = rowAcc[r] + cellH / 2 - offsetY;
-
                 objs.push(
                   new fabric.Rect({
                     left,
@@ -7064,11 +7025,9 @@
                     originY: "center",
                   }),
                 );
-
                 if (cell.text && cell.text.trim()) {
                   const padding = Math.min(8, cellW * 0.15);
                   const textWidth = Math.max(0, cellW - padding);
-
                   objs.push(
                     new fabric.Textbox(cell.text, {
                       left,
@@ -7102,7 +7061,6 @@
                 excludeFromExport: true,
               }),
             );
-
             return new fabric.Group(objs, {
               left: App.state.baseWidth / 2,
               top: App.state.baseHeight / 2,
@@ -7144,19 +7102,14 @@
 
           normalizeScaledTable: function (tableObj) {
             if (!tableObj?.isTable || !tableObj.tableData) return;
-
             const sX = tableObj.scaleX || 1;
             const sY = tableObj.scaleY || 1;
-
             if (Math.abs(sX - 1) < 0.001 && Math.abs(sY - 1) < 0.001) return;
-
             const d = JSON.parse(JSON.stringify(tableObj.tableData));
             if (!d.colWidths) d.colWidths = Array(d.cols).fill(d.cellWidth || 100);
             if (!d.rowHeights) d.rowHeights = Array(d.rows).fill(d.cellHeight || 44);
-
             d.colWidths = d.colWidths.map((w) => w * sX);
             d.rowHeights = d.rowHeights.map((h) => h * sY);
-
             if (d.cells)
               d.cells.forEach((row) =>
                 row.forEach((cell) => {
@@ -7169,7 +7122,6 @@
                   }
                 }),
               );
-
             tableObj.scaleX = 1;
             tableObj.scaleY = 1;
             this._replaceTableOnCanvas(tableObj, d);
@@ -7177,30 +7129,24 @@
           updateActiveTableStyle: function (styleUpdates) {
             const act = App.canvas.getActiveObject();
             if (!act || !act.isTable || !act.tableData) return;
-
             act.tableData.cells.forEach((row) => {
               row.forEach((cell) => {
                 Object.assign(cell, styleUpdates);
               });
             });
-
             const transform = act.toObject(["left", "top", "scaleX", "scaleY", "angle", "opacity", "originX", "originY"]);
-
             const newGroup = this.buildFabricTable(act.tableData);
             newGroup.set(transform);
-
             const idx = App.canvas.getObjects().indexOf(act);
             App.canvas.discardActiveObject();
             App.canvas.remove(act);
             App.canvas.insertAt(newGroup, idx, true);
             App.canvas.setActiveObject(newGroup);
             App.canvas.requestRenderAll();
-
             App.history.saveState();
           },
         },
 
-        // --- 条码生成与管理 ---
         barcode: {
           defaults: {
             type: "code128",
@@ -7437,7 +7383,6 @@
           },
         },
 
-        // --- UI 管理 ---
         ui: {
           setDataType: function (type) {
             const act = App.canvas.getActiveObject();
@@ -7551,7 +7496,6 @@
                 if (key === "textAlign") map.align = val;
                 if (key === "stroke") map.borderColor = val;
                 if (key === "strokeWidth") map.borderWidth = parseFloat(val);
-
                 if (Object.keys(map).length > 0) {
                   App.tableEditor.updateActiveTableStyle(map);
                 }
@@ -7560,7 +7504,6 @@
 
               if (key === "textAlign" && ["i-text", "textbox", "text"].includes(act.type)) {
                 const validOrigin = val === "justify" ? "left" : val;
-
                 let anchorPoint;
                 if (validOrigin === "left") {
                   anchorPoint = act.getPointByOrigin("left", "top");
@@ -7585,7 +7528,6 @@
 
               App.canvas.requestRenderAll();
               App.history.saveState();
-
               App.ui.updateGeo(null, null, act);
             }
           },
@@ -7607,7 +7549,6 @@
               let update = {};
               if (style === "bold") update.bold = !cell.bold;
               if (style === "italic") update.italic = !cell.italic;
-
               if (Object.keys(update).length > 0) {
                 App.tableEditor.updateActiveTableStyle(update);
                 document.getElementById("btnBold").classList.toggle("active", update.bold !== undefined ? update.bold : cell.bold);
@@ -7625,20 +7566,16 @@
           toggleVertical: function () {
             const act = App.canvas.getActiveObject();
             if (!act || !["i-text", "text", "textbox"].includes(act.type)) return;
-
             const isVert = !!act.isVertical;
             const text = act.text || "";
-
             if (!isVert) {
               act._prevLineHeight = act.lineHeight;
               act._prevTextAlign = act.textAlign;
-
               const paragraphs = text.split("\n");
               const vertParagraphs = paragraphs.map((p) => {
                 return p.split("").join("\n");
               });
               const vertText = vertParagraphs.join("\n\n");
-
               act.set({
                 text: vertText,
                 isVertical: true,
@@ -7652,7 +7589,6 @@
                 return p.replace(/\n/g, "");
               });
               const horizText = horizParagraphs.join("\n");
-
               act.set({
                 text: horizText,
                 isVertical: false,
@@ -7709,7 +7645,6 @@
                   stroke: defaultStroke,
                   strokeWidth: defaultWidth,
                 });
-
                 const elColor = document.getElementById("shapeStroke");
                 const elWidth = document.getElementById("shapeStrokeWidth");
                 if (elColor) elColor.value = defaultStroke;
@@ -7739,10 +7674,8 @@
 
             act.set("fill", val);
             act._lastColor = val;
-
             document.getElementById("shapeNoFill").checked = false;
             document.getElementById("shapeFillWrapper").classList.remove("opacity-50", "pointer-events-none");
-
             App.canvas.requestRenderAll();
             App.history.saveState();
           },
@@ -7751,7 +7684,6 @@
             const act = App.canvas.getActiveObject();
             let count = 0;
             let type = "";
-
             if (act) {
               type = act.type;
               if (type === "activeSelection") {
@@ -7763,16 +7695,12 @@
 
             const canTune = count >= 1;
             document.querySelectorAll(".tune-btn").forEach((btn) => (btn.disabled = !canTune));
-
             const canAlign = count >= 2;
             document.querySelectorAll(".align-btn").forEach((btn) => (btn.disabled = !canAlign));
-
             const canDistribute = count >= 3;
             document.querySelectorAll(".dist-btn").forEach((btn) => (btn.disabled = !canDistribute));
-
             const btnGroup = document.getElementById("btnGroup");
             const btnUngroup = document.getElementById("btnUngroup");
-
             if (btnGroup) {
               btnGroup.disabled = type !== "activeSelection";
             }
@@ -7795,15 +7723,12 @@
           updateInspector: function () {
             const ui = this._getUIProxy();
             const act = App.canvas.getActiveObject();
-
             if (act) App.state.editingBackground = false;
             const hasBgImage = !!App.canvas.backgroundImage;
             if (!hasBgImage && App.state.editingBackground) App.state.editingBackground = false;
             const isBgEdit = App.state.editingBackground && hasBgImage;
             const hasSelection = !!act || isBgEdit;
-
             this.updateToolbarState();
-
             const allPanels = [
               "selectionControls",
               "dataTypeTabs",
@@ -7832,11 +7757,9 @@
             }
 
             ui("selectionControls").show(true);
-
             const propLockBtn = document.getElementById("propLockBtn");
             const propLockIcon = document.getElementById("propLockIcon");
             const propLockText = document.getElementById("propLockText");
-
             if (propLockBtn && act) {
               const isLocked = act.lockMovementX;
               propLockIcon.className = isLocked ? "ph ph-lock-key text-red-600 text-lg" : "ph ph-lock-key-open text-lg";
@@ -7852,7 +7775,6 @@
               this.updateGeo(null, null, act);
               ui("propOpacity").val(act.opacity || 1);
               ui("opacityVal").text(Math.round((act.opacity || 1) * 100) + "%");
-
               const supportsAffix = ["i-text", "textbox", "text"].includes(act.type) || act.isBarcode;
               ui("affixProps").show(supportsAffix);
               if (supportsAffix) {
@@ -7862,14 +7784,11 @@
 
               const supportsDataBinding = ["i-text", "textbox", "text"].includes(act.type) || act.isBarcode;
               let currentType = "static";
-
               if (supportsDataBinding) {
                 ui("dataTypeTabs").show(true);
-
                 if (act.dataBinding && act.dataBinding.type === "variable") currentType = "variable";
                 else if (act.isSerialNumber) currentType = "serial";
                 else if (act.isDynamicDate) currentType = "date";
-
                 ["static", "variable", "serial", "date"].forEach((type) => {
                   const btn = document.getElementById(`dtBtn-${type}`);
                   if (btn) {
@@ -7879,7 +7798,6 @@
                       : "py-1.5 text-center rounded-md transition text-[10px] font-bold text-slate-500 hover:text-slate-700 hover:bg-gray-200/50";
                   }
                 });
-
                 if (currentType === "variable") {
                   ui("dataProps").show(true);
                   this._updateVDPUI(ui, act);
@@ -7890,7 +7808,6 @@
                   ui("serialStep").val(cfg.step);
                   ui("serialRepeat").val(cfg.repeat);
                   ui("serialChangeType").val(cfg.changeType);
-
                   const wrapper = document.getElementById("serialGenerateCountWrapper");
                   if (wrapper) {
                     const isLabelMode = App.state.paperType === "label";
@@ -7898,7 +7815,6 @@
                       wrapper.classList.add("hidden");
                     } else {
                       wrapper.classList.remove("hidden");
-                      // 确保回显当前配置的生成数量，如果没有则默认为 10
                       ui("serialGenerateCount").val(cfg.generateCount || 10);
                     }
                   }
@@ -7979,11 +7895,8 @@
             const select = document.getElementById("propSharedSelect");
             const act = App.canvas.getActiveObject();
             const currentId = act ? act.sharedId : "";
-
             select.innerHTML = '<option value="">选择共享字段</option>';
-
             const keys = App.content.getAvailableSharedIds();
-
             if (keys.length === 0) {
               const opt = document.createElement("option");
               opt.text = "(暂无共享字段)";
@@ -8024,7 +7937,6 @@
             if (!val) return;
             const act = App.canvas.getActiveObject();
             if (!act) return;
-
             act.set("refId", val);
             act.set("syncMode", "ref");
             act.set("editable", true);
@@ -8064,39 +7976,29 @@
           _updateImagePanel: function (ui, obj, isBackground) {
             ui("imgProps").show(true);
             ui("affixProps").show(false);
-
             if (isBackground) {
               ui("imgNormalControls").show(false);
               ui("imgBgControls").show(true);
-
               document.getElementById("vdpImgDirCtrl").classList.add("hidden");
-
               const shouldPrint = obj.printBackground !== false;
               ui("checkPrintBg").check(shouldPrint);
             } else {
               ui("imgNormalControls").show(true);
               ui("imgBgControls").show(false);
               ui("dataTypeTabs").show(true);
-
               document.getElementById("dataTypeTabs")?.classList.replace("grid-cols-4", "grid-cols-2");
-
               const btnStatic = document.getElementById("dtBtn-static");
               const btnVariable = document.getElementById("dtBtn-variable");
-
               ["dtBtn-serial", "dtBtn-date"].forEach((id) => document.getElementById(id)?.classList.add("hidden"));
-
               const isVar = obj.dataBinding && obj.dataBinding.type === "variable";
-
               if (isVar) {
                 ui("imgProps").show(false);
               }
 
               const activeClass = "py-1.5 text-center rounded-md transition text-[10px] font-bold bg-white text-red-600 shadow-sm ring-1 ring-black/5";
               const normalClass = "py-1.5 text-center rounded-md transition text-[10px] font-bold text-slate-500 hover:text-slate-700 hover:bg-gray-200/50";
-
               if (btnStatic) btnStatic.className = !isVar ? activeClass : normalClass;
               if (btnVariable) btnVariable.className = isVar ? activeClass : normalClass;
-
               if (isVar) {
                 ui("dataProps").show(true);
                 this._updateVDPUI(ui, obj);
@@ -8105,7 +8007,6 @@
                 const btnText = document.getElementById("vdpImgDirBtnText");
                 if (dirCtrl) {
                   dirCtrl.classList.remove("hidden");
-
                   if (obj.imgDirId && obj.imgDirName) {
                     statusText.innerText = `📁 ${obj.imgDirName}`;
                     statusText.className = "text-[10px] text-green-600 font-bold truncate max-w-[120px] inline-block align-bottom";
@@ -8128,7 +8029,6 @@
             const objs = act.getObjects();
             const types = new Set(objs.map((o) => o.type));
             const isOnly = (...args) => [...types].every((t) => args.includes(t));
-
             if (isOnly("i-text", "textbox", "text")) {
               this._updateTextPanel(ui, objs[0]);
             } else if (isOnly("rect", "circle", "triangle", "polygon", "path")) {
@@ -8164,13 +8064,10 @@
           updatePageConfig: function (key, value) {
             const act = App.canvas.getActiveObject();
             if (!act || !act.isDynamicPageNum) return;
-
             act.pageConfig[key] = value;
-
             const currentPage = (App.state.currentDataIndex || 0) + act.pageConfig.startFrom;
             const totalPages = App.dataSource.calculateTotalPages();
             let text = act.pageConfig.format.replace("{page}", currentPage).replace("{total}", totalPages);
-
             act.set("text", text);
             App.canvas.requestRenderAll();
             App.history.saveState();
@@ -8196,13 +8093,11 @@
           updateSerialPreview: function (config) {
             const preview = [];
             const previewCount = 6;
-
             for (let i = 0; i < previewCount; i++) {
               preview.push(App.tools._calculateSerialNumber(config, i));
             }
 
             const previewText = preview.join(", ") + "...";
-
             const el = document.getElementById("serialPreviewText");
             if (el) el.innerText = "预览: " + previewText;
           },
@@ -8212,7 +8107,10 @@
               return {
                 el,
                 val: (v) => {
-                  if (el) el.value = v ?? "";
+                  if (el) {
+                    el.value = v ?? "";
+                    if (typeof FontPicker !== 'undefined') FontPicker.setValue(el, v ?? "");
+                  }
                   return this._getUIProxy()(id);
                 },
                 text: (v) => {
@@ -8244,7 +8142,6 @@
             const cfg = act.barcodeConfig || {};
             const isAutoGenerated = act.isSerialNumber || act.isDynamicDate || currentType === "variable";
             const inputContainer = document.getElementById("bcText").parentElement;
-
             if (isAutoGenerated) {
               if (inputContainer) inputContainer.classList.add("hidden");
               const sharedCheck = document.getElementById("bcUseShared");
@@ -8263,7 +8160,6 @@
               const textArea = document.getElementById("bcText");
               const select = document.getElementById("bcSharedSelect");
               checkbox.checked = isSharedRef;
-
               if (!isSharedRef) {
                 ui("bcText").val(act.rawContent !== undefined ? act.rawContent : cfg.text);
               }
@@ -8309,7 +8205,6 @@
           _updateTextPanel: function (ui, act) {
             ui("textProps").show(true);
             ui("sharedProps").show(true);
-
             ui("propLineHeight")
               .parentShow(true)
               .val(act.lineHeight || 1.2);
@@ -8325,23 +8220,17 @@
             ui("btnItalic").active(act.fontStyle === "italic");
             ui("btnUnderline").active(!!act.underline);
             ui("btnVertical").active(!!act.isVertical);
-
             const sharedId = act.sharedId;
             const radios = document.getElementsByName("syncMode");
             const sharePanel = document.getElementById("syncPanel_share");
             const refPanel = document.getElementById("syncPanel_ref");
-
             const input = document.getElementById("propSharedInput");
             const btn = document.getElementById("propSharedBtn");
             const hint = document.getElementById("propSharedHint");
-
             sharePanel.classList.add("hidden");
             refPanel.classList.add("hidden");
-
             const currentMode = act.syncMode || (sharedId ? "share" : "none");
-
             radios.forEach((r) => (r.checked = r.value === currentMode));
-
             if (currentMode === "share") {
               sharePanel.classList.remove("hidden");
               if (input) {
@@ -8378,10 +8267,8 @@
             if (typeof act.suffixRaw === "undefined") act.suffixRaw = act.suffix || "";
             const pRaw = act.prefixRaw !== undefined ? act.prefixRaw : act.prefix || "";
             const sRaw = act.suffixRaw !== undefined ? act.suffixRaw : act.suffix || "";
-
             ui("propPrefix").val(pRaw);
             ui("propSuffix").val(sRaw);
-
             if (act.isDynamicPageNum) {
               ui("pageNumProps").show(true);
               ui("pageFormat").val(act.pageConfig.format);
@@ -8434,7 +8321,6 @@
               };
               ui("cornerStyle").val(conf.style);
               ["tl", "tr", "bl", "br"].forEach((k) => ui(`corner${k.toUpperCase()}`).val(conf[k]));
-
               if (conf.tl === conf.tr && conf.tr === conf.bl && conf.bl === conf.br) {
                 ui("masterRadius").val(conf.tl);
                 ui("masterRadiusVal").val(conf.tl);
@@ -8452,14 +8338,12 @@
 
             ui("noDataSourceTip").show(false);
             ui("bindControls").show(true);
-
             const sheetSel = ui("bindSheet").el;
             if (sheetSel) {
               const targetSheet = (act.dataBinding && act.dataBinding.sheet) || ds.currentSheet;
               sheetSel.innerHTML = "";
               ds.sheetNames.forEach((s) => sheetSel.add(new Option(s, s)));
               sheetSel.value = targetSheet;
-
               let headers = [];
               if (targetSheet === ds.currentSheet) {
                 headers = ds.headers;
@@ -8488,12 +8372,9 @@
             const list = document.getElementById("layerList");
             if (!list) return;
             list.innerHTML = "";
-
             const isLabelPreview = App.state.paperType === "label" && App.state.label.mode === "preview";
-
             let objs = [];
             let bgObj = null;
-
             if (isLabelPreview) {
               const designData = App.state.label.designContent;
               if (designData) {
@@ -8516,28 +8397,19 @@
 
             const renderItem = (config) => {
               const { icon, name, obj, isBg } = config;
-
               const isSelected = !isLabelPreview && (isBg ? App.state.editingBackground : activeObjs.includes(obj));
-
               const div = document.createElement("div");
-
               const cursorClass = isLabelPreview ? "cursor-default" : "cursor-pointer";
-
               const opacityClass = isLabelPreview ? "opacity-90" : "";
-
               const baseClass = `layer-item flex items-center justify-between px-3 py-2.5 border-b border-gray-100 last:border-b-0 text-xs transition-all select-none group border-l-4 ${cursorClass} ${opacityClass}`;
               const activeClass = "bg-red-50 border-l-red-500 text-red-600 font-bold";
               const normalClass = "bg-white border-l-transparent text-slate-600 hover:bg-gray-50";
-
               div.className = `${baseClass} ${isSelected ? activeClass : normalClass}`;
-
               if (!isBg && !isLabelPreview) div.setAttribute("draggable", "true");
-
               const deleteBtnHtml = `
                 <button class="del-btn w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-red-600 hover:bg-red-100 opacity-0 group-hover:opacity-100 transition-all shrink-0" title="删除">
                     <i class="ph ph-trash"></i>
                 </button>`;
-
               div.innerHTML = `
                   <div class="flex items-center gap-2.5 overflow-hidden pointer-events-none flex-1">
                       <i class="ph ${icon} text-lg shrink-0 opacity-80"></i>
@@ -8545,7 +8417,6 @@
                   </div>
                   ${deleteBtnHtml}
               `;
-
               if (!isLabelPreview) {
                 div.fabricObj = obj;
                 div.onclick = (e) => {
@@ -8573,13 +8444,11 @@
                   App.canvas.requestRenderAll();
                   this.updateInspector();
                 };
-
                 div.ondblclick = (e) => {
                   e.preventDefault();
                   if (!isSelected) div.click();
                   App.ui.switchTab("props");
                 };
-
                 if (!isBg) {
                   div.addEventListener("dragstart", (e) => {
                     div.classList.add("dragging");
@@ -8600,7 +8469,6 @@
               if (delBtn) {
                 delBtn.onclick = (e) => {
                   e.stopPropagation();
-
                   if (isLabelPreview) {
                     const content = App.state.label.designContent;
                     if (isBg) {
@@ -8633,13 +8501,10 @@
 
               return div;
             };
-
             objs.forEach((o) => {
               let icon = "ph-square";
               let label = o.type;
-
               const checkType = (typeStr) => o.type === typeStr;
-
               if (o.isBarcode) {
                 icon = "ph-barcode";
                 label = "条码";
@@ -8672,7 +8537,6 @@
                 }),
               );
             });
-
             if (bgObj) {
               list.appendChild(
                 renderItem({
@@ -8690,7 +8554,6 @@
                 const afterElement = this._getDragAfterElement(list, e.clientY);
                 const draggable = document.querySelector(".dragging");
                 if (!draggable) return;
-
                 if (afterElement == null) {
                   const last = list.lastElementChild;
                   if (last && !last.getAttribute("draggable")) {
@@ -8706,11 +8569,9 @@
           },
           switchTab: function (tabName) {
             const tabs = ["props", "layers", "data"];
-
             tabs.forEach((t) => {
               const btn = document.getElementById(`tabBtn-${t}`);
               const content = document.getElementById(`tabContent-${t}`);
-
               if (t === tabName) {
                 btn.classList.add("bg-white", "text-slate-700", "border-red-600");
                 btn.classList.remove("text-slate-500", "border-transparent", "hover:bg-gray-100");
@@ -8721,7 +8582,6 @@
                 content.classList.add("hidden");
               }
             });
-
             if (tabName === "layers") {
               this.updateLayerList();
             }
@@ -8809,7 +8669,6 @@
           },
           _getDragAfterElement: function (container, y) {
             const draggableElements = [...container.querySelectorAll('.layer-item[draggable="true"]:not(.dragging)')];
-
             return draggableElements.reduce(
               (closest, child) => {
                 const box = child.getBoundingClientRect();
@@ -8862,7 +8721,6 @@
           _finalizeLayerOrder: function () {
             const list = document.getElementById("layerList");
             const gridObjects = App.canvas.getObjects().filter((o) => o.isGrid);
-
             const domOrderObjs = Array.from(list.children)
               .map((div) => div.fabricObj)
               .filter((o) => o);
@@ -8887,11 +8745,9 @@
             const activeObj = App.canvas.getActiveObject();
             const queue = App.state.selectionQueue;
             if (!activeObj || activeObj.type !== "activeSelection" || queue.length < 2) return Utils.toast("请按住 Shift 依次点击选择对象进行对齐", "info");
-
             const anchor = queue[0];
             App.canvas.discardActiveObject();
             const aRect = anchor.getBoundingRect(true);
-
             queue.forEach((obj) => {
               if (obj === anchor) return;
               const r = obj.getBoundingRect(true);
@@ -8900,11 +8756,9 @@
               if (mode === "left") dx = aRect.left - r.left;
               else if (mode === "center") dx = aRect.left + aRect.width / 2 - (r.left + r.width / 2);
               else if (mode === "right") dx = aRect.left + aRect.width - (r.left + r.width);
-
               if (mode === "top") dy = aRect.top - r.top;
               else if (mode === "middle") dy = aRect.top + aRect.height / 2 - (r.top + r.height / 2);
               else if (mode === "bottom") dy = aRect.top + aRect.height - (r.top + r.height);
-
               if (dx !== 0 || dy !== 0) {
                 obj.set({
                   left: obj.left + dx,
@@ -8934,14 +8788,12 @@
             const r = act.getBoundingRect(true);
             let dx = 0,
               dy = 0;
-
             if (mode === "left") dx = areaL - r.left;
             else if (mode === "centerH") dx = areaL + (areaR - areaL) / 2 - (r.left + r.width / 2);
             else if (mode === "right") dx = areaR - (r.left + r.width);
             else if (mode === "top") dy = areaT - r.top;
             else if (mode === "middle") dy = areaT + (areaB - areaT) / 2 - (r.top + r.height / 2);
             else if (mode === "bottom") dy = areaB - (r.top + r.height);
-
             if (dx !== 0 || dy !== 0) {
               act
                 .set({
@@ -8966,7 +8818,6 @@
               last = objs[objs.length - 1];
             const getC = (o) => (isH ? o.getCenterPoint().x : o.getCenterPoint().y);
             const step = (getC(last) - getC(first)) / (objs.length - 1);
-
             objs.forEach((o, i) => {
               if (i > 0 && i < objs.length - 1) o.set(isH ? "left" : "top", (isH ? o.left : o.top) + (getC(first) + step * i - getC(o))).setCoords();
             });
@@ -8994,6 +8845,7 @@
                 }
               })
               .join(""),
+              
           _createPrintIframe: function (content, css = "") {
             const id = "print-iframe-sandbox";
             let f = document.getElementById(id);
@@ -9010,7 +8862,56 @@
             doc.close();
           },
 
-          // 打印
+           _getExportCanvas: async function () {
+            const originalBg = App.canvas.backgroundImage;
+            let shouldHideBg = false;
+            if (originalBg && originalBg.printBackground === false) {
+              shouldHideBg = true;
+              App.canvas.backgroundImage = null;
+            }
+            
+            const json = App.canvas.toJSON(CUSTOM_PROPS);
+            if (shouldHideBg) {
+              App.canvas.backgroundImage = originalBg;
+            }
+            
+            const grids = App.canvas
+              .getObjects()
+              .filter((o) => o.isGrid && !o.isCutLine)
+              .map((o) => ({
+                ...o.toObject(["stroke", "strokeWidth", "strokeDashArray", "x1", "y1", "x2", "y2"]),
+                excludeFromExport: false,
+              }));
+            json.objects =[...grids, ...json.objects];
+            const tC = new fabric.Canvas(null, {
+              width: App.state.baseWidth,
+              height: App.state.baseHeight,
+              backgroundColor: App.paper.getSettings().paperBgColor,
+            });
+            return new Promise((resolve) => {
+              tC.loadFromJSON(json, async () => {
+                const processObj = (o) => {
+                  if (["i-text", "text", "textbox"].includes(o.type)) {
+                    o.text = App.content.compute(o);
+                    if (o.fontWeight === "bold" || o.fontWeight === 700 || o.fontWeight === "bolder") {
+                      o.set({
+                        stroke: o.fill || "#000000",
+                        strokeWidth: (o.fontSize || 14) * 0.008, 
+                        strokeLineJoin: "round",
+                        paintFirst: "stroke" 
+                      });
+                    }
+                  } else if (o.type === "group" && o._objects) {
+                    o._objects.forEach(processObj);
+                  }
+                };
+                tC.getObjects().forEach(processObj);
+                tC.renderAll();
+                resolve(tC);
+              });
+            });
+          },
+
           print: async function () {
             const updateTasks = App.canvas.getObjects().map(async (o) => {
               if (o.isDynamicDate && o.dateConfig) {
@@ -9047,7 +8948,7 @@
                   if (isLabelPreview) await App.label.renderPreview();
                 }
 
-                const vC = await App.vector.getExportCanvas(false);
+                const vC =  await this._getExportCanvas();
                 vC.setViewportTransform([1, 0, 0, 1, 0, 0]);
                 const svg = vC.toSVG({
                   suppressPreamble: true,
@@ -9084,7 +8985,7 @@
               App.ui.hideLoading();
             }
           },
-          //导出pdf
+
           exportPDF: async function () {
             const btn = document.querySelector('button[onclick="App.io.exportPDF()"]');
             const oldTxt = btn ? btn.innerHTML : "";
@@ -9098,6 +8999,23 @@
             let shouldBatch = false;
             let isLabelPreview = false;
             try {
+              const usedFonts = new Set();
+              usedFonts.add("SourceHanSerifCN-Bold"); 
+              App.canvas.getObjects().forEach(o => {
+                if (['i-text', 'textbox', 'text'].includes(o.type) && o.fontFamily) {
+                  usedFonts.add(o.fontFamily);
+                }
+                if (o.isTable && o.tableData && o.tableData.cells) {
+                  o.tableData.cells.flat().forEach(cell => {
+                    if (cell && cell.fontFamily) usedFonts.add(cell.fontFamily);
+                  });
+                }
+              });
+              if (App.fontManager.availableFonts.length === 0) {
+                 App.ui.showLoading("首次导出需加载系统字体...");
+                 await App.fontManager.queryLocalFonts();
+              }
+
               const updateTasks = App.canvas.getObjects().map(async (o) => {
                 if (o.isDynamicDate && o.dateConfig) {
                   o.rawContent = Utils.formatDate(new Date(), null, o.dateConfig);
@@ -9124,6 +9042,13 @@
                 format: [w, h],
                 compress: true,
               });
+              try {
+                App.ui.showLoading("正在渲染PDF..");
+                await App.fontManager.applyToJsPDF(pdf, Array.from(usedFonts));
+              } catch(fontErr) {
+                console.warn("字体应用到 PDF 失败:", fontErr);
+              }
+
               const settings = App.paper.getSettings();
               const typeLabel = App.paper.defaults[settings.type]?.label || "设计稿";
               for (let i = 0; i < loopCount; i++) {
@@ -9136,31 +9061,25 @@
                   }
                 }
 
-                const vC = await App.vector.getExportCanvas(true);
+                App.ui.showLoading(`正在生成第 ${i + 1} 页...`);
+                const vC =  await this._getExportCanvas(); 
                 vC.setViewportTransform([1, 0, 0, 1, 0, 0]);
                 const svg = vC.toSVG({
                   suppressPreamble: true,
-                  viewBox: {
-                    x: 0,
-                    y: 0,
-                    width: App.state.baseWidth,
-                    height: App.state.baseHeight,
-                  },
+                  viewBox: { x: 0, y: 0, width: App.state.baseWidth, height: App.state.baseHeight }
                 });
                 vC.dispose();
                 if (i > 0) pdf.addPage([w, h], orientation);
                 await pdf.svg(new DOMParser().parseFromString(svg, "image/svg+xml").documentElement, {
-                  x: 0,
-                  y: 0,
-                  width: w,
-                  height: h,
+                  x: 0, y: 0, width: w, height: h
                 });
               }
 
+              App.ui.showLoading("正在保存 PDF...");
               const fileName = `${typeLabel}_${Date.now()}.pdf`;
               pdf.save(fileName);
               Utils.toast(`PDF 导出成功 (${loopCount} 页)`);
-            } catch (e) {
+} catch (e) {
               console.error(e);
               Utils.toast("导出失败: " + e.message, "error");
             } finally {
@@ -9171,6 +9090,10 @@
                 } else {
                   App.dataSource.renderPage(originalIndex);
                 }
+              }
+
+              if (App.fontManager && typeof App.fontManager.clearCache === "function") {
+                App.fontManager.clearCache();
               }
 
               App.ui.hideLoading();
@@ -9226,9 +9149,7 @@
                     imgDirId: dsState.imgDirId,
                   }
                 : null;
-
             const typeLabel = App.paper.defaults[settings.type]?.label || "设计稿";
-
             const blob = new Blob(
               [
                 JSON.stringify({
@@ -9248,7 +9169,6 @@
                 type: "application/json",
               },
             );
-
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
             a.download = `${typeLabel}_${Date.now()}.paper`;
@@ -9264,14 +9184,11 @@
                 const s = data.settings;
                 const setV = (id, v) => document.getElementById(id) && (document.getElementById(id).value = v);
                 const setC = (id, v) => document.getElementById(id) && (document.getElementById(id).checked = v);
-
                 setV("paperType", s.type || "ruled");
-
                 if (s.marginTop !== undefined) setV("marginTop", Math.round(Utils.px2mm(s.marginTop)));
                 if (s.marginBottom !== undefined) setV("marginBottom", Math.round(Utils.px2mm(s.marginBottom)));
                 if (s.marginLeft !== undefined) setV("marginLeft", Math.round(Utils.px2mm(s.marginLeft)));
                 if (s.marginRight !== undefined) setV("marginRight", Math.round(Utils.px2mm(s.marginRight)));
-
                 setV("rowCount", s.rowCount);
                 setV("gridColor", s.gridColor);
                 setV("strokeWidth", s.strokeWidth);
@@ -9279,19 +9196,15 @@
                 if (s.customW) setV("customW", s.customW);
                 if (s.customH) setV("customH", s.customH);
                 if (s.paperOrientation !== undefined) setC("paperOrientation", s.paperOrientation);
-
                 if (s.type === "label") {
                   if (s.labelWidth) setV("labelWidth", s.labelWidth);
                   if (s.labelHeight) setV("labelHeight", s.labelHeight);
                   if (s.labelCols) setV("labelCols", s.labelCols);
                   if (s.labelRows) setV("labelRows", s.labelRows);
-
                   if (s.labelGapH !== undefined) setV("labelGapH", s.labelGapH);
                   if (s.labelGapV !== undefined) setV("labelGapV", s.labelGapV);
-
                   if (s.labelQuantity) setV("labelQuantity", s.labelQuantity);
                   if (s.showCropMarks !== undefined) setC("showCropMarks", s.showCropMarks);
-
                   if (s.fitLabelSize !== undefined) setC("fitLabelSize", s.fitLabelSize);
                 }
 
@@ -9303,7 +9216,6 @@
                 setC("ruledClosedDouble", !!s.ruledClosedDouble);
                 setC("paperDual", !!s.dual);
                 setC("doubleBorder", s.doubleBorder !== undefined ? s.doubleBorder : true);
-
                 if (s.type === "english") {
                   setV("englishOffset", Utils.px2mm(s.englishOffset || 0).toFixed(1));
                   setV("englishLineGap", Utils.px2mm(s.englishLineGap || 6).toFixed(1));
@@ -9313,14 +9225,12 @@
                 setV("columnCount", s.columnCount || 12);
                 setV("gridColumns", s.gridColumns || 24);
                 setV("squareDash", s.squareDash || 4);
-
                 if (s.type === "music") {
                   setV("staffCount", s.staffCount || 8);
                   setV("staffLineCount", s.staffLineCount || 5);
                 }
                 setV("staffLineGap", Utils.px2mm(s.staffLineGap || 3).toFixed(1));
                 setV("staffGroupGap", Utils.px2mm(s.staffGroupGap || 12).toFixed(1));
-
                 if (["tianzige", "mizige", "huizige", "jiugongge"].includes(s.type)) {
                   setV("tianSize", Utils.px2mm(s.tianSize || 20).toFixed(1));
                   setV("tianInnerScale", s.tianInnerScale ?? 0.4);
@@ -9348,15 +9258,12 @@
               }
 
               App.dataSource.syncFromProject(data.dataSource);
-
               if (data.dataSource && data.dataSource.imgDirId) {
                 App.dataSource.restoreImageDir(data.dataSource.imgDirId);
               }
               App.paper.changeType(document.getElementById("paperType").value || "ruled", false);
               App.paper.updateSize();
-
               App.canvas.clear();
-
               const done = () => {
                 if (App.state.paperType === "label") {
                   App.state.label.mode = "design";
@@ -9366,7 +9273,6 @@
                 App.paper.drawGrid();
                 App.ui.hideModal("welcomeModal");
                 App.ui.updateLayerList();
-
                 App.canvas.getObjects().forEach((o) => {
                   if (!o.isGrid) {
                     o.set({
@@ -9385,13 +9291,11 @@
                     App.content.render(o);
                   }
                 });
-
                 App.history.reset();
                 App.state.hasUnsavedChanges = false;
                 App.ui.hideLoading();
                 Utils.toast("项目加载成功");
               };
-
               data.canvasData ? App.canvas.loadFromJSON(data.canvasData, done) : done();
             } catch (e) {
               console.error(e);
@@ -9429,23 +9333,19 @@
           paste: function () {
             if (!App.state.clipboard) return;
             App.state.pasteCount++;
-
             App.state.clipboard.clone((c) => {
               App.canvas.discardActiveObject();
-
               c.set({
                 left: c.left + 20 * App.state.pasteCount,
                 top: c.top + 20 * App.state.pasteCount,
                 evented: true,
               });
-
               if (c.dataBinding) {
                 c.dataBinding = JSON.parse(JSON.stringify(c.dataBinding));
               }
               if (c.dateConfig) c.dateConfig = JSON.parse(JSON.stringify(c.dateConfig));
               if (c.serialConfig) c.serialConfig = JSON.parse(JSON.stringify(c.serialConfig));
               if (c.barcodeConfig) c.barcodeConfig = JSON.parse(JSON.stringify(c.barcodeConfig));
-
               if (c.syncMode === "share" && c.sharedId) {
                 c.syncMode = "ref";
                 Utils.toast("已粘贴为引用对象");
@@ -9472,7 +9372,6 @@
               }
 
               App.canvas.setActiveObject(c);
-
               if (c.syncMode === "ref" && c.sharedId) {
                 App.ui.applyRefId(c.sharedId);
               }
@@ -9484,7 +9383,7 @@
             }, CUSTOM_PROPS);
           },
         },
-        // 内容与渲染管理器 ---
+        
         content: {
           parseVariables: function (text) {
             if (!text) return "";
@@ -9510,7 +9409,6 @@
             }
 
             let parsedRaw = this.parseVariables(raw);
-
             let myPre = obj.prefixRaw !== undefined ? obj.prefixRaw : obj.prefix || "";
             let mySuf = obj.suffixRaw !== undefined ? obj.suffixRaw : obj.suffix || "";
             myPre = this.parseVariables(myPre);
@@ -9630,200 +9528,10 @@
             return this.compute(sourceObj);
           },
         },
-        // --- 矢量导出 (Opentype.js) ---
-        vector: {
-          _fontCache: {},
 
-          getFont: async function (fontFamily) {
-            if (this._fontCache[fontFamily]) return this._fontCache[fontFamily];
-            if (App.state.availabelFonts && App.state.availabelFonts.length > 0) {
-              const localFontData = App.state.availabelFonts.find((f) => f.family === fontFamily);
-              if (localFontData) {
-                try {
-                  const buffer = await (await localFontData.blob()).arrayBuffer();
-                  const parsedFont = opentype.parse(buffer);
-                  this._fontCache[fontFamily] = parsedFont;
-                  return parsedFont;
-                } catch (e) {
-                  console.warn(`本地字体 ${fontFamily} 解析失败`, e);
-                }
-              }
-            }
-            if (this._fontCache["DEFAULT"]) return this._fontCache["DEFAULT"];
-            return new Promise((resolve) => {
-              opentype.load("./static/SourceHanSerifCN-Bold.ttf", (err, font) => {
-                if (!err) {
-                  this._fontCache["DEFAULT"] = font;
-                  if (fontFamily) this._fontCache[fontFamily] = font;
-                  resolve(font);
-                } else {
-                  resolve(null);
-                }
-              });
-            });
-          },
-
-          _convertObj: async function (o) {
-            if (o.type === "group" || o.isTable) {
-              const newChildren = [];
-              const originalAngle = o.angle;
-              o.angle = 0;
-
-              for (const child of o.getObjects()) {
-                newChildren.push(await this._convertObj(child));
-              }
-
-              o.angle = originalAngle;
-
-              const props = o.toObject(["left", "top", "angle", "scaleX", "scaleY", "originX", "originY", "opacity", "fill", "stroke", "strokeWidth", "isTable", "tableData", "width", "height"]);
-              const newGroup = new fabric.Group(newChildren, props);
-              if (o.isTable) {
-                newGroup.isTable = true;
-                newGroup.tableData = o.tableData;
-              }
-              return newGroup;
-            }
-
-            if (["i-text", "text", "textbox"].includes(o.type)) {
-              if (!o.text || !o.text.toString().trim()) return o;
-
-              let font = await this.getFont(o.fontFamily);
-              if (!font) font = await this.getFont("DEFAULT");
-              if (!font) return o;
-
-              try {
-                const textStr = o.text.toString();
-                const fontSize = o.fontSize;
-                const lineHeight = o.lineHeight || 1.16;
-                const boxWidth = o.width;
-
-                let fabricLines = o.textLines || textStr.split("\n");
-
-                let pathData = "";
-                const totalH = fabricLines.length * fontSize * lineHeight;
-                let startY = -totalH / 2 + fontSize * (lineHeight - 1) + fontSize * 0.8;
-
-                fabricLines.forEach((lineText, i) => {
-                  if (!lineText) return;
-
-                  const lineWidth = font.getAdvanceWidth(lineText, fontSize);
-                  const currentY = startY + i * fontSize * lineHeight;
-
-                  const isLastLine = i === fabricLines.length - 1;
-                  const isShortLine = lineWidth < boxWidth * 0.85;
-
-                  const shouldJustify = o.type === "textbox" && o.textAlign === "justify" && !isLastLine && !isShortLine;
-
-                  if (shouldJustify) {
-                    const extraSpace = boxWidth - lineWidth;
-                    const spacePerChar = lineText.length > 1 ? extraSpace / (lineText.length - 1) : 0;
-
-                    let currentX = -boxWidth / 2;
-
-                    for (const char of lineText) {
-                      const charPath = font.getPath(char, currentX, currentY, fontSize);
-                      pathData += charPath.toPathData(2);
-                      currentX += font.getAdvanceWidth(char, fontSize) + spacePerChar;
-                    }
-                  } else {
-                    let xOffset = 0;
-                    if (o.textAlign === "center") {
-                      xOffset = -lineWidth / 2;
-                    } else if (o.textAlign === "right") {
-                      xOffset = (o.type === "textbox" ? boxWidth / 2 : lineWidth / 2) - lineWidth;
-                    } else {
-                      xOffset = o.type === "textbox" ? -boxWidth / 2 : -lineWidth / 2;
-                    }
-
-                    const linePath = font.getPath(lineText, xOffset, currentY, fontSize);
-                    pathData += linePath.toPathData(2);
-                  }
-                });
-
-                const path = new fabric.Path(pathData, {
-                  ...o.toObject(["fill", "stroke", "strokeWidth", "opacity", "scaleX", "scaleY", "angle", "shadow", "originX", "originY", "left", "top"]),
-                  width: o.width,
-                  height: o.height,
-                  stroke: o.stroke || null,
-                  fill: o.fill,
-                  objectCaching: false,
-                });
-
-                const center = o.getCenterPoint();
-                path.setPositionByOrigin(center, "center", "center");
-
-                return path;
-              } catch (e) {
-                console.warn("Text convert error:", e);
-                return o;
-              }
-            }
-            return o;
-          },
-
-          getExportCanvas: async function (convertText) {
-            const originalBg = App.canvas.backgroundImage;
-            let shouldHideBg = false;
-            if (originalBg && originalBg.printBackground === false) {
-              shouldHideBg = true;
-              App.canvas.backgroundImage = null;
-            }
-            const json = App.canvas.toJSON(CUSTOM_PROPS);
-            if (shouldHideBg) {
-              App.canvas.backgroundImage = originalBg;
-            }
-            const grids = App.canvas
-              .getObjects()
-              .filter((o) => o.isGrid && !o.isCutLine)
-              .map((o) => ({
-                ...o.toObject(["stroke", "strokeWidth", "strokeDashArray", "x1", "y1", "x2", "y2"]),
-                excludeFromExport: false,
-              }));
-            json.objects = [...grids, ...json.objects];
-
-            const tC = new fabric.Canvas(null, {
-              width: App.state.baseWidth,
-              height: App.state.baseHeight,
-              backgroundColor: App.paper.getSettings().paperBgColor,
-            });
-            return new Promise((resolve) => {
-              tC.loadFromJSON(json, async () => {
-                tC.getObjects().forEach((o) => {
-                  if (["i-text", "text", "textbox"].includes(o.type)) {
-                    // FIX: 使用 compute 方法来确保 prefix/suffix 中的共享变量 {xxx} 被正确解析
-                    o.text = App.content.compute(o);
-                  }
-                });
-                if (convertText) {
-                  const savedBgImage = tC.backgroundImage;
-                  const processedObjs = [];
-                  for (const originalObj of tC.getObjects()) {
-                    if (originalObj.isGrid) processedObjs.push(originalObj);
-                    else processedObjs.push(await this._convertObj(originalObj));
-                  }
-
-                  tC.clear();
-
-                  tC.setBackgroundColor(App.paper.getSettings().paperBgColor, () => {});
-
-                  if (savedBgImage) {
-                    tC.setBackgroundImage(savedBgImage, () => {});
-                  }
-
-                  processedObjs.forEach((o) => tC.add(o));
-                }
-                tC.renderAll();
-                resolve(tC);
-              });
-            });
-          },
-        },
-        // --- 标签纸管理器 ---
         label: {
-          // 切换模式
           toggleMode: function () {
             if (App.state.paperType !== "label") return;
-
             if (App.state.label.mode === "design") {
               this.enterPreview();
             } else {
@@ -9834,9 +9542,7 @@
             const json = App.canvas.toJSON(CUSTOM_PROPS);
             json.objects = json.objects.filter((o) => !o.isGrid);
             App.state.label.designContent = json;
-
             App.state.label.mode = "preview";
-
             const isSingleMode = document.getElementById("fitLabelSize")?.checked;
             if (isSingleMode) {
               App.state.label.previewPage = App.state.currentDataIndex || 0;
@@ -9850,7 +9556,6 @@
 
           enterDesign: function () {
             App.state.label.mode = "design";
-
             if (App.state.label.designContent) {
               App.canvas.loadFromJSON(App.state.label.designContent, () => {
                 App.canvas.forEachObject((o) => {
@@ -9860,14 +9565,11 @@
                 });
                 App.paper.updateSize();
                 this.updateToggleButtonUI();
-
                 App.ui.updateLayerList();
-
                 const isSingleMode = document.getElementById("fitLabelSize")?.checked;
                 if (isSingleMode) {
                   const page = App.state.label.previewPage || 0;
                   const ds = App.state.dataSource;
-
                   if (ds.isActive && page < ds.data.length) {
                     App.state.currentDataIndex = page;
                   }
@@ -9879,7 +9581,6 @@
               App.paper.updateSize();
               this.updateToggleButtonUI();
               App.dataSource.renderPage(App.state.currentDataIndex);
-
               App.ui.updateLayerList();
             }
           },
@@ -9887,26 +9588,21 @@
             const wasHistoryLocked = App.history.locked;
             App.history.locked = true;
             App.canvas.renderOnAddRemove = false;
-
             try {
               App.canvas.clear();
               const cfg = App.paper.getSettings();
               App.canvas.setBackgroundColor(cfg.paperBgColor || "#ffffff");
               App.canvas.backgroundImage = null;
-
               const designJSON = App.state.label.designContent;
               if (!designJSON) return;
-
               const labelW = Utils.mm2px(cfg.labelWidth);
               const labelH = Utils.mm2px(cfg.labelHeight);
               const gapH = Utils.mm2px(cfg.labelGapH);
               const gapV = Utils.mm2px(cfg.labelGapV);
               const startX = cfg.marginLeft;
               const startY = cfg.marginTop;
-
               const ds = App.state.dataSource;
               let totalLabelCount = 0;
-
               if (ds.isActive && ds.data.length > 0) {
                 totalLabelCount = ds.data.length * cfg.labelQuantity;
               } else {
@@ -9915,25 +9611,19 @@
 
               const itemsPerPage = Math.max(1, cfg.labelCols * cfg.labelRows);
               const totalPages = Math.ceil(totalLabelCount / itemsPerPage);
-
               if (typeof App.state.label.previewPage === "undefined") App.state.label.previewPage = 0;
               let currentPage = App.state.label.previewPage;
               if (currentPage >= totalPages) currentPage = Math.max(0, totalPages - 1);
               App.state.label.previewPage = currentPage;
-
               const startItemIndex = currentPage * itemsPerPage;
               let drawnCount = 0;
-
               for (let r = 0; r < cfg.labelRows; r++) {
                 for (let c = 0; c < cfg.labelCols; c++) {
                   const globalIndex = startItemIndex + drawnCount;
                   if (globalIndex >= totalLabelCount) break;
-
                   const currentX = startX + c * (labelW + gapH);
                   const currentY = startY + r * (labelH + gapV);
-
                   const dataIndex = ds.isActive && ds.data.length > 0 ? Math.floor(globalIndex / cfg.labelQuantity) : globalIndex;
-
                   await this._cloneDesignTo(designJSON, currentX, currentY, dataIndex, currentPage, totalPages);
                   drawnCount++;
                 }
@@ -9986,14 +9676,12 @@
                     if (img) {
                       img.left += x;
                       img.top += y;
-
                       img.set({
                         selectable: false,
                         evented: false,
                         excludeFromExport: false,
                         globalCompositeOperation: "source-over",
                       });
-
                       App.canvas.add(img);
                       img.sendToBack();
                     }
@@ -10008,27 +9696,21 @@
                     left: o.left + x,
                     top: o.top + y,
                   });
-
                   const ds = App.state.dataSource;
                   const hasData = ds.isActive && ds.data[dataIndex];
-
                   const prefix = o.prefix || "";
                   const suffix = o.suffix || "";
-
                   if (o.isDynamicPageNum && o.pageConfig) {
                     const pageNum = currentPage + (o.pageConfig.startFrom || 1);
                     const total = totalPages || 1;
                     const pageText = o.pageConfig.format.replace("{page}", pageNum).replace("{total}", total);
-
                     o.rawContent = pageText;
-
                     o.set("text", prefix + pageText + suffix);
                   }
 
                   if (o.isSerialNumber && o.serialConfig) {
                     const serialText = App.tools._calculateSerialNumber(o.serialConfig, dataIndex);
                     o.rawContent = serialText;
-
                     if (!o.isBarcode) {
                       o.set("text", prefix + serialText + suffix);
                     }
@@ -10040,7 +9722,6 @@
                       const valStr = String(val);
                       if (["i-text", "textbox", "text"].includes(o.type)) {
                         o.rawContent = valStr;
-
                         o.set("text", prefix + valStr + suffix);
                       }
                     }
@@ -10054,7 +9735,6 @@
                           ...o.barcodeConfig,
                           text: String(val),
                         };
-
                         const newBarcodeObj = await App.barcode.createOrUpdate(o, newConfig);
                         o = newBarcodeObj;
                       } catch (err) {
@@ -10071,7 +9751,6 @@
                           const val = ds.data[dataIndex][cell.dataBinding.field];
                           if (val !== undefined && val !== null) {
                             const valStr = String(val);
-
                             if (cell.text !== valStr) {
                               cell.text = valStr;
                               tableChanged = true;
@@ -10097,10 +9776,8 @@
                     lockScalingX: true,
                     lockScalingY: true,
                   });
-
                   App.canvas.add(o);
                 });
-
                 await Promise.all(processing);
                 resolve();
               });
@@ -10110,9 +9787,7 @@
           updateToggleButtonUI: function () {
             const btn = document.getElementById("labelModeToggle");
             const isLabel = App.state.paperType === "label";
-
             const toolbar = document.querySelector("header > div:nth-child(2)");
-
             if (!isLabel) {
               btn.classList.add("hidden");
               if (toolbar) toolbar.classList.remove("pointer-events-none");
@@ -10122,7 +9797,6 @@
             btn.classList.remove("hidden");
             const icon = btn.querySelector("i");
             const span = btn.querySelector("span");
-
             if (App.state.label.mode === "design") {
               icon.className = "ph ph-eye text-base";
               span.innerText = "预览模式";
@@ -10134,7 +9808,7 @@
             }
           },
         },
-        // --- 模板系统 ---
+        
         templates: {
           data: [],
           init: async function () {
@@ -10192,7 +9866,6 @@
             if (t?.url) {
               App.ui.showLoading("下载模板...");
               try {
-                // 加载模板前也先清空当前数据源
                 await App.dataSource.close();
                 App.io.loadProjectData(await (await fetch(t.url)).json());
               } catch {
@@ -10203,7 +9876,6 @@
           },
         },
 
-        //页面标尺
         ruler: {
           h: null,
           v: null,
@@ -10222,7 +9894,6 @@
 
           draw: function (mouseX, mouseY) {
             if (!this.isEnabled || !this.h || !this.v) return;
-
             const dpr = window.devicePixelRatio || 1,
               thick = 20,
               zoom = App.state.zoom;
@@ -10230,10 +9901,8 @@
               wrapper = document.getElementById("canvasWrapper");
             const w = main.clientWidth - thick,
               h = main.clientHeight - thick;
-
             [this.h, this.v].forEach((c, i) => {
               const size = i ? [thick, h] : [w, thick];
-
               if (c.width !== size[0] * dpr || c.height !== size[1] * dpr) {
                 c.width = size[0] * dpr;
                 c.height = size[1] * dpr;
@@ -10241,16 +9910,12 @@
                 c.style.height = size[1] + "px";
               }
             });
-
-            // 2. 计算标尺参数
             const mBox = main.getBoundingClientRect(),
               wBox = wrapper.getBoundingClientRect();
-            const start = [wBox.left - mBox.left - thick, wBox.top - mBox.top - thick - 25]; // [水平偏移, 垂直偏移]
+            const start = [wBox.left - mBox.left - thick, wBox.top - mBox.top - thick - 25]; 
             const pxPerMm = CONFIG.MM_TO_PX * zoom;
-
             const step = pxPerMm < 0.5 ? 50 : pxPerMm < 2 ? 10 : pxPerMm < 4 ? 5 : 1;
             const showMid = step * 5 * pxPerMm > 45;
-
             const drawAxis = (ctx, isVert, len, offset) => {
               ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
               ctx.fillStyle = "#fff";
@@ -10260,19 +9925,16 @@
               ctx.lineWidth = 1;
               isVert ? (ctx.moveTo(19.5, 0), ctx.lineTo(19.5, len)) : (ctx.moveTo(0, 19.5), ctx.lineTo(len, 19.5));
               ctx.stroke();
-
               ctx.fillStyle = ctx.strokeStyle = "#a5a5a5";
               ctx.font = "10px sans-serif";
               ctx.beginPath();
               const min = Math.floor(-offset / pxPerMm),
                 max = Math.ceil((len - offset) / pxPerMm);
-
               for (let mm = Math.floor(min / step) * step; mm <= max; mm += step) {
                 const pos = offset + mm * pxPerMm;
                 const isMajor = mm % (step * 10) === 0,
                   isMid = mm % (step * 5) === 0;
                 const tickLen = isMajor ? 10 : isMid ? 6 : 4;
-
                 if (isVert) {
                   ctx.moveTo(thick, pos);
                   ctx.lineTo(thick - tickLen, pos);
@@ -10293,10 +9955,8 @@
               }
               ctx.stroke();
             };
-
             drawAxis(this.ctxH, false, w, start[0]);
             drawAxis(this.ctxV, true, h, start[1]);
-
             if (mouseX != null) {
               const drawC = (ctx, isV, pos, max) => {
                 if (pos < 0 || pos > max) return;
@@ -10311,8 +9971,172 @@
           },
         },
       };
+      const FontPicker = {
+        _instances: new Map(), 
+
+        create(container, selectEl, onChange) {
+          const getOptions = () => {
+            const opts = [];
+            for (const o of selectEl.options) {
+              opts.push({ value: o.value, label: o.text, isSep: o.value === '---sep---' });
+            }
+            return opts;
+          };
+          const trigger = document.createElement('div');
+          trigger.className = 'font-select-trigger';
+          trigger.innerHTML = `<span class="font-select-trigger-label">加载中...</span><i class="ph ph-caret-down font-select-trigger-icon"></i>`;
+          const dropdown = document.createElement('div');
+          dropdown.className = 'font-select-dropdown';
+          dropdown.innerHTML = `
+            <div class="font-select-search-box">
+              <input type="text" class="font-select-search-input" placeholder="搜索字体…" />
+            </div>
+            <div class="font-select-list"></div>
+          `;
+          container.appendChild(trigger);
+          document.body.appendChild(dropdown);
+          const labelEl = trigger.querySelector('.font-select-trigger-label');
+          const searchInput = dropdown.querySelector('.font-select-search-input');
+          const listEl = dropdown.querySelector('.font-select-list');
+          let isOpen = false;
+          let currentValue = selectEl.value || selectEl.options[0]?.value || '';
+          const renderList = (filter = '') => {
+            const opts = getOptions();
+            const q = filter.trim().toLowerCase();
+            listEl.innerHTML = '';
+            let anyVisible = false;
+            for (const opt of opts) {
+              if (opt.isSep) {
+                if (!q) {
+                  const sep = document.createElement('div');
+                  sep.className = 'font-select-option separator';
+                  sep.textContent = opt.label;
+                  listEl.appendChild(sep);
+                }
+                continue;
+              }
+              if (q && !opt.label.toLowerCase().includes(q) && !opt.value.toLowerCase().includes(q)) continue;
+              anyVisible = true;
+              const item = document.createElement('div');
+              item.className = 'font-select-option' + (opt.value === currentValue ? ' selected' : '');
+              item.textContent = opt.label;
+              item.dataset.value = opt.value;
+              const previewFamily = opt.value.replace(/^'|'$/g, '');
+              item.style.fontFamily = `"${previewFamily}", sans-serif`;
+              item.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                setValue(opt.value, opt.label, true);
+                close();
+              });
+              listEl.appendChild(item);
+            }
+
+            if (!anyVisible) {
+              const empty = document.createElement('div');
+              empty.className = 'font-select-empty';
+              empty.textContent = '没有匹配的字体';
+              listEl.appendChild(empty);
+            }
+          };
+          const syncLabel = () => {
+            const opts = getOptions();
+            const found = opts.find(o => o.value === currentValue);
+            labelEl.textContent = found ? found.label : currentValue;
+          };
+          const setValue = (val, _label, fireChange) => {
+            currentValue = val;
+            selectEl.value = val;
+            syncLabel();
+            if (fireChange) {
+              selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+              if (onChange) onChange(val);
+            }
+          };
+          const positionDropdown = () => {
+            const rect = trigger.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const dropH = 280;
+            dropdown.style.width = Math.max(container.offsetWidth, 200) + 'px';
+            if (spaceBelow < dropH && rect.top > dropH) {
+              dropdown.style.top = (rect.top - dropH + window.scrollY) + 'px';
+            } else {
+              dropdown.style.top = (rect.bottom + window.scrollY + 2) + 'px';
+            }
+            dropdown.style.left = rect.left + window.scrollX + 'px';
+          };
+          const open = () => {
+            if (isOpen) return;
+            App.loadLocalFonts().then(() => renderList(searchInput.value));
+            isOpen = true;
+            trigger.classList.add('open');
+            dropdown.classList.add('open');
+            positionDropdown();
+            searchInput.value = '';
+            renderList('');
+            requestAnimationFrame(() => {
+              const sel = listEl.querySelector('.selected');
+              if (sel) sel.scrollIntoView({ block: 'nearest' });
+              searchInput.focus();
+            });
+          };
+          const close = () => {
+            if (!isOpen) return;
+            isOpen = false;
+            trigger.classList.remove('open');
+            dropdown.classList.remove('open');
+          };
+          trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            isOpen ? close() : open();
+          });
+          searchInput.addEventListener('input', () => renderList(searchInput.value));
+          searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') close();
+          });
+          document.addEventListener('click', (e) => {
+            if (!container.contains(e.target) && !dropdown.contains(e.target)) close();
+          }, true);
+          // 滚动/resize 时重新定位
+          window.addEventListener('scroll', () => { if (isOpen) positionDropdown(); }, true);
+          window.addEventListener('resize', () => { if (isOpen) positionDropdown(); });
+          syncLabel();
+          renderList('');
+          const instance = { setValue, renderList, syncLabel, close, selectEl };
+          FontPicker._instances.set(selectEl, instance);
+          return instance;
+        },
+
+        setValue(selectEl, value) {
+          const inst = FontPicker._instances.get(selectEl);
+          if (inst) {
+            inst.setValue(value, null, false);
+          } else {
+            selectEl.value = value;
+          }
+        },
+
+        refresh(selectEl) {
+          const inst = FontPicker._instances.get(selectEl);
+          if (inst) {
+            inst.syncLabel();
+          }
+        },
+      };
       window.onload = function () {
         App.init();
+        const propFontSelect = document.getElementById('propFont');
+        const propFontContainer = document.getElementById('propFontPicker');
+        if (propFontSelect && propFontContainer) {
+          FontPicker.create(propFontContainer, propFontSelect, (val) => {
+            App.ui.setProp('fontFamily', val);
+          });
+        }
+
+        const floatFontSelect = document.getElementById('floatFontFamily');
+        const floatFontContainer = document.getElementById('floatFontFamilyPicker');
+        if (floatFontSelect && floatFontContainer) {
+          FontPicker.create(floatFontContainer, floatFontSelect, null);
+        }
       };
     </script>
   </body>
