@@ -3275,11 +3275,7 @@
             this.updateNavUI();
           },
 
-          // Single source of truth for sheet rows. calculateTotalPages and renderPage
-          // must read the same array. Do not add other sheet_to_json options. With the
-          // default options (raw: true), a date cell returns a Date object that prints
-          // as "Mon May 15 2023 00:00:00 GMT+0800", and a number cell with format
-          // "000000" returns 123, so the printed leading zeros are lost.
+          // Shared formatted row cache for pagination and data binding.
           _getSheetRows: function (sheetName) {
             const s = App.state.dataSource;
             if (!this._sheetCache) this._sheetCache = {};
