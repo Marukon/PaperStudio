@@ -3275,6 +3275,26 @@
             this.updateNavUI();
           },
 
+          // Single source of truth for sheet rows. calculateTotalPages and renderPage
+          // must read the same array. Do not add other sheet_to_json options. With the
+          // default options (raw: true), a date cell returns a Date object that prints
+          // as "Mon May 15 2023 00:00:00 GMT+0800", and a number cell with format
+          // "000000" returns 123, so the printed leading zeros are lost.
+          _getSheetRows: function (sheetName) {
+            const s = App.state.dataSource;
+            if (!this._sheetCache) this._sheetCache = {};
+            if (!this._sheetCache[sheetName]) {
+              const ws = s.workbook && s.workbook.Sheets[sheetName];
+              if (!ws) return null;
+              this._sheetCache[sheetName] = XLSX.utils.sheet_to_json(ws, {
+                raw: false,
+                dateNF: "yyyy-mm-dd",
+                defval: "",
+              });
+            }
+            return this._sheetCache[sheetName];
+          },
+
           calculateTotalPages: function () {
             const s = App.state.dataSource;
             const cfg = App.paper.getSettings();
@@ -3308,11 +3328,8 @@
               }
 
               if (boundSheetName && s.workbook.Sheets[boundSheetName]) {
-                if (!this._sheetCache) this._sheetCache = {};
-                if (!this._sheetCache[boundSheetName]) {
-                  this._sheetCache[boundSheetName] = XLSX.utils.sheet_to_json(s.workbook.Sheets[boundSheetName]);
-                }
-                const len = this._sheetCache[boundSheetName].length;
+                const rows = this._getSheetRows(boundSheetName);
+                const len = rows ? rows.length : 0;
                 if (len > 0) return len;
               }
 
@@ -3458,7 +3475,6 @@
             pageIndex = Math.max(0, Math.min(pageIndex, max - 1));
             if (max === 0) pageIndex = 0;
             App.state.currentDataIndex = pageIndex;
-            if (!this._sheetCache) this._sheetCache = {};
             if (s.isActive && s.workbook) {
               const objs = App.canvas.getObjects();
               const sheetsToCache = new Set();
@@ -3475,16 +3491,7 @@
                 }
               });
               sheetsToCache.forEach((sheetName) => {
-                if (!this._sheetCache[sheetName]) {
-                  const ws = s.workbook.Sheets[sheetName];
-                  if (ws) {
-                    this._sheetCache[sheetName] = XLSX.utils.sheet_to_json(ws, {
-                      raw: false,
-                      dateNF: "yyyy-mm-dd",
-                      defval: "",
-                    });
-                  }
-                }
+                this._getSheetRows(sheetName);
               });
             }
 
@@ -3556,20 +3563,10 @@
             if (!binding || binding.type !== "variable" || !binding.field) return null;
             const s = App.state.dataSource;
             const targetSheet = binding.sheet || s.currentSheet;
-            if (!this._sheetCache[targetSheet]) {
-              const ws = s.workbook?.Sheets[targetSheet];
-              if (ws) {
-                this._sheetCache[targetSheet] = XLSX.utils.sheet_to_json(ws, {
-                  raw: false,
-                  dateNF: "yyyy-mm-dd",
-                  defval: "",
-                });
-              } else {
-                return null;
-              }
-            }
+            const rows = this._getSheetRows(targetSheet);
+            if (!rows) return null;
 
-            const rowData = this._sheetCache[targetSheet][pageIndex];
+            const rowData = rows[pageIndex];
             if (!rowData) return "";
             const val = rowData[binding.field];
             return val !== undefined && val !== null ? String(val) : "";
@@ -8608,19 +8605,7 @@
             if (ds.isActive && ds.workbook) {
               const targetSheet = act.dataBinding.sheet;
               const targetField = act.dataBinding.field;
-              if (!App.dataSource._sheetCache) App.dataSource._sheetCache = {};
-              if (!App.dataSource._sheetCache[targetSheet]) {
-                const ws = ds.workbook.Sheets[targetSheet];
-                if (ws) {
-                  App.dataSource._sheetCache[targetSheet] = XLSX.utils.sheet_to_json(ws, {
-                    raw: false,
-                    dateNF: "yyyy-mm-dd",
-                    defval: "",
-                  });
-                }
-              }
-
-              const dataList = App.dataSource._sheetCache[targetSheet];
+              const dataList = App.dataSource._getSheetRows(targetSheet);
               const pageIndex = App.state.currentDataIndex || 0;
               let newRawValue = "";
               if (dataList && dataList.length > 0) {
